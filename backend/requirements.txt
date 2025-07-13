@@ -1,0 +1,23 @@
+# Framework e Servidor
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic-settings
+
+# Banco de Dados e ORM
+SQLAlchemy[asyncio]
+psycopg2-binary
+
+# Segurança e Autenticação
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]
+
+# Ferramentas de Utilidade
+typer 
+pandas
+openpyxl
+email-validator
+python-multipart
+
+# Inteligência Artificial
+google-generativeai

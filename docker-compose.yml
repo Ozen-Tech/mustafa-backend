@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Serviço da API FastAPI
+  higiplas_api:
+    build:
+      context: ./backend  # 1. CONTEXTO: Diz ao Docker para "entrar" nesta pasta primeiro.
+      dockerfile: Dockerfile     # 2. DOCKERFILE: O nome do arquivo a ser usado.
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/app:/code/app # Mapeia o código para desenvolvimento
+    env_file:
+      - .env
+    depends_on:
+      - higiplas_postgres
+    networks:
+      - higiplas_network
+
+
+  # Serviço do Banco de Dados PostgreSQL
+  higiplas_postgres:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    networks:
+      - higiplas_network
+
+volumes:
+  postgres_data:
+
+networks:
+  higiplas_network:
+    driver: bridge

@@ -1,0 +1,2 @@
+-- As tabelas agora são criadas e gerenciadas pela aplicação FastAPI no startup.
+-- Este arquivo pode ser usado no futuro para popular dados iniciais, se necessário.
