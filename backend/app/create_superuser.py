@@ -44,21 +44,20 @@ def create_initial_superuser():
         logger.info(f"Superusuário não encontrado. Iniciando processo de criação para '{settings.SUPERUSER_EMAIL}'.")
 
         # 2. Garante que a "Empresa Padrão" existe ou a cria
-        default_company_name = "Empresa Padrão Higiplas"
+        default_company_name = "Empresa Padrão Mustafa" 
         empresa = db.query(models.Empresa).filter(models.Empresa.nome == default_company_name).first()
         if not empresa:
             logger.info(f"Criando '{default_company_name}' para o superusuário.")
             empresa = models.Empresa(nome=default_company_name)
             db.add(empresa)
-            db.commit()
-            db.refresh(empresa)
+            # ...
             logger.info(f"Empresa '{default_company_name}' criada com ID: {empresa.id}.")
         
         # 3. Cria o objeto do superusuário
         hashed_password = get_password_hash(settings.SUPERUSER_PASSWORD)
         
         superuser = models.Usuario(
-            nome="Admin Higiplas",
+            nome="Admin Mustafa", 
             email=settings.SUPERUSER_EMAIL,
             hashed_password=hashed_password,
             perfil=PerfilUsuario.ADMIN, # Garante que você tenha essa enumeração

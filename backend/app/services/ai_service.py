@@ -20,7 +20,7 @@ def generate_analysis_from_data(user_question: str, system_data: str) -> str:
      
      # Este é o nosso "Mega Prompt". É a instrução principal para a IA.
      prompt_template = f"""
-     Você é o "Assistente de Análise Higiplas", uma IA especialista em gestão de estoque e análise de dados de negócios. 
+     Você é o "Assistente de Análise Mustafa", uma IA especialista em gestão de estoque e análise de dados de negócios. 
      Sua função é ajudar o gestor a entender os dados do sistema e tomar melhores decisões.
      
      O gestor fez a seguinte pergunta: 

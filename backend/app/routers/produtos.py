@@ -87,7 +87,7 @@ def download_produtos_excel(
         output.seek(0)
 
         headers = {
-            'Content-Disposition': 'attachment; filename="higiplas_produtos.xlsx"'
+            'Content-Disposition': 'attachment; filename="mustafa_produtos.xlsx"'
         }
         
         return StreamingResponse(output, headers=headers, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')

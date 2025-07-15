@@ -5,6 +5,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .connection import Base
 from datetime import datetime
+import uuid
 
 class Empresa(Base):
     __tablename__ = "empresas"
@@ -14,6 +15,7 @@ class Empresa(Base):
     data_criacao = Column(DateTime, default=datetime.utcnow)
     usuarios = relationship("Usuario", back_populates="empresa")
     produtos = relationship("Produto", back_populates="empresa")
+    contratos = relationship("Contrato", back_populates="empresa")
 
 class Usuario(Base):
     __tablename__ = "usuarios"
@@ -27,6 +29,7 @@ class Usuario(Base):
     data_criacao = Column(DateTime(timezone=True), server_default=func.now())
     empresa = relationship("Empresa", back_populates="usuarios")
     movimentacoes = relationship("MovimentacaoEstoque", back_populates="usuario")
+    contratos = relationship("Contrato", back_populates="usuario")
 
 class Produto(Base):
     __tablename__ = "produtos"
@@ -69,3 +72,23 @@ class MovimentacaoEstoque(Base):
 
     produto = relationship("Produto", back_populates="movimentacoes")
     usuario = relationship("Usuario", back_populates="movimentacoes")
+
+class Contrato(Base):
+    __tablename__ = "contratos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nome_promotor = Column(String, nullable=False, index=True)
+    cpf_promotor = Column(String, nullable=False, index=True)
+
+    nome_arquivo_original = Column(String, nullable=False)
+    nome_arquivo_servidor = Column(String, nullable=False, unique=True) # Nome único para evitar conflitos
+    caminho_arquivo = Column(String, nullable=False)
+    
+    data_upload = Column(DateTime(timezone=True), server_default=func.now())
+
+    # --- Relacionamentos para saber QUEM fez o upload e de QUAL EMPRESA ---
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    empresa_id = Column(Integer, ForeignKey("empresas.id"), nullable=False)
+
+    usuario = relationship("Usuario") # Podemos chamar contrato.usuario
+    empresa = relationship("Empresa") # Podemos chamar contrato.empresa

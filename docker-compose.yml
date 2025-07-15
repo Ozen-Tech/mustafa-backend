@@ -1,40 +1,47 @@
+# docker-compose.yml
 version: '3.8'
 
 services:
   # Serviço da API FastAPI
-  higiplas_api:
+  mustafa_api: # <-- NOME ALTERADO
     build:
-      context: ./backend  # 1. CONTEXTO: Diz ao Docker para "entrar" nesta pasta primeiro.
-      dockerfile: Dockerfile     # 2. DOCKERFILE: O nome do arquivo a ser usado.
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
     volumes:
-      - ./backend/app:/code/app # Mapeia o código para desenvolvimento
+      - ./backend:/code # Mapeia o código para hot-reload
     env_file:
-      - .env
+      - .env # Carrega as variáveis de ambiente
     depends_on:
-      - higiplas_postgres
+      - mustafa_postgres # <-- DEPENDÊNCIA ALTERADA
     networks:
-      - higiplas_network
-
+      - mustafa_network # <-- REDE ALTERADA
 
   # Serviço do Banco de Dados PostgreSQL
-  higiplas_postgres:
-    image: postgres:15-alpine
+  mustafa_postgres: # <-- NOME ALTERADO
+    image: postgres:15
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - mustafa_postgres_data:/var/lib/postgresql/data/ # <-- VOLUME NOMEADO ALTERADO
     environment:
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-      POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
+      POSTGRES_USER: ${DB_USER}       # Lê do .env
+      POSTGRES_PASSWORD: ${DB_PASSWORD} # Lê do .env
+      POSTGRES_DB: ${DB_NAME}           # Lê do .env
+    # A porta 5432:5432 foi removida.
+    # É uma boa prática não expor a porta do DB diretamente para a máquina host
+    # se apenas o container da API precisa acessá-la. A comunicação será via rede interna do Docker.
+    # Se você precisa acessar o DB com um client (DBeaver, etc), descomente a linha abaixo.
+    # ports:
+    #   - "5432:5432"
     networks:
-      - higiplas_network
+      - mustafa_network # <-- REDE ALTERADA
 
+# Define o volume persistente para os dados do Postgres
 volumes:
-  postgres_data:
+  mustafa_postgres_data: # <-- NOME ALTERADO
+    driver: local
 
+# Define a rede interna para os serviços se comunicarem
 networks:
-  higiplas_network:
+  mustafa_network: # <-- NOME ALTERADO
     driver: bridge
