@@ -11,13 +11,20 @@ interface User {
   perfil: string;
 }
 
+interface LoginParams {
+  email: string;
+  password: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean; // Adicionado para facilitar a checagem
-  login: (data: any) => Promise<void>;
+  login: (data: LoginParams) => Promise<void>; 
   logout: () => void;
   isLoading: boolean;
 }
+
+
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -51,7 +58,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (formData: any) => {
+
+  const login = async (formData: LoginParams) => {
     // Seu backend espera 'application/x-www-form-urlencoded' para o token
     const params = new URLSearchParams();
     params.append('username', formData.email);

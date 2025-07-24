@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { AxiosError } from 'axios';
+
 
 // Interface do usuário, para ser usada como prop
 interface User {
@@ -18,6 +20,22 @@ interface PromotorFormModalProps {
   onClose: () => void;
   onSave: () => void;
   promotor: User | null; // Se for null, é um formulário de criação
+}
+
+interface CreatePayload {
+  nome: string;
+  email: string;
+  perfil: string;
+  whatsapp_number: string;
+  password?: string;
+  empresa_id?: number;
+}
+
+interface UpdatePayload {
+  nome?: string;
+  email?: string;
+  perfil?: string;
+  whatsapp_number?: string;
 }
 
 export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: PromotorFormModalProps) => {
@@ -82,6 +100,7 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
       onSave(); // Avisa a página pai para recarregar a lista
       onClose(); // Fecha o modal
     } catch (err: any) {
+      const error = err as AxiosError<{ detail: string }>;
       setError(err.response?.data?.detail || "Ocorreu um erro. Tente novamente.");
     }
   };
