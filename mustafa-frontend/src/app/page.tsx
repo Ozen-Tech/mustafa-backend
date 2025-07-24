@@ -18,7 +18,7 @@ export default function RootPage() {
     if (isAuthenticated) {
       router.replace('/dashboard'); // Se logado, vai para o dashboard
     } else {
-      router.replace('/login'); // Se não, vai para o login
+      router.replace('(auth)/login'); // Se não, vai para o login
     }
 
 
