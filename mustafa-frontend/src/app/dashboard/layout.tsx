@@ -1,22 +1,12 @@
 "use client";
 
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import Link from 'next/link';
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, isAuthenticated, isLoading, logout } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      // CORREÇÃO CRÍTICA AQUI TAMBÉM: A rota de proteção deve apontar para o caminho completo
-      router.push('/login'); 
-    }
-  }, [isLoading, isAuthenticated, router]);
-
-  if (isLoading || !isAuthenticated) {
+  const { user, isLoading, logout } = useAuth();
+  
+  if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
   }
   
