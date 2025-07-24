@@ -1,21 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 # Nossos routers
-from app.routers import auth, empresas, produtos, movimentacoes, upload_excel, insights, contratos as contratos_router # Adicionei 'insights'
+from app.routers import auth, empresas, insights, contratos as contratos_router, webhook_whatsapp, fotos
 from fastapi.staticfiles import StaticFiles
 
 # Criação da instância principal do FastAPI
 app = FastAPI(
     title="API Mustafa",
-    description="Sistema de Gestão de Estoque para o Mustafa.", 
-    version="1.0.0"
+    description="API para gestão de fotos de promotores via WhatsApp.", 
+    version="2.0.0"
 )
 
 # Configuração do CORS (já estava correta)
 origins = [
-    "http://localhost",
     "http://localhost:3000",
-    "https://higiplas-system.vercel.app",
 ]
 
 app.add_middleware(
@@ -26,17 +24,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/fotos-promotores", StaticFiles(directory="uploads/fotos_promotores"), name="fotos-promotores")
 app.mount("/arquivos-contratos", StaticFiles(directory="uploads"), name="arquivos-contratos")
 
 # Incluindo todas as nossas rotas de forma limpa
 # Note que no seu código, a rota de insights ainda não estava sendo incluída
+# Inclusão de rotas da API
 app.include_router(auth.router, prefix="/users", tags=["Usuários e Autenticação"])
 app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
-app.include_router(produtos.router, prefix="/produtos", tags=["Produtos"])
-app.include_router(movimentacoes.router, prefix="/movimentacoes", tags=["Movimentações de Estoque"])
-app.include_router(upload_excel.router, tags=["Upload Excel"])
-app.include_router(insights.router, tags=["Insights"]) # Incluindo o router da IA
-app.include_router(contratos_router.router)
+app.include_router(fotos.router, prefix="/fotos", tags=["Fotos"]) # <-- prefixo /fotos para a rota ""
+app.include_router(contratos_router.router, prefix="/contratos", tags=["Contratos"]) # <-- prefixo /contratos para a rota ""
+app.include_router(insights.router, prefix="/insights", tags=["Insights"])
+
+# <<<< CORREÇÃO PRINCIPAL AQUI >>>>
+# Como o `webhook_whatsapp.py` JÁ TEM prefix="/webhook", nós NÃO o colocamos aqui.
+app.include_router(webhook_whatsapp.router)
 
 @app.get("/", tags=["Root"], summary="Verifica a saúde da API")
 async def read_root():

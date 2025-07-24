@@ -3,7 +3,7 @@
 import typer
 import getpass
 from sqlalchemy.orm import Session
-
+import click
 from app.db.connection import get_db
 from app.crud import usuario as crud_usuario
 from app.schemas import usuario as schemas_usuario
@@ -88,9 +88,3 @@ def list_users():
 
     finally:
         db.close()
-
-# Ponto de entrada para o Typer
-if __name__ == "__main__":
-    # Import necessário para a Enum de PerfilUsuario funcionar com Typer
-    import click 
-    cli_app()

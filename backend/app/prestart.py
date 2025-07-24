@@ -21,8 +21,8 @@ def create_initial_data(db: Session):
     logger.info("Verificando dados iniciais...")
     empresa = crud_empresa.get_empresa(db, empresa_id=1)
     if not empresa:
-        logger.info("Empresa principal não encontrada. Criando 'MUSTAFA'...") 
-        empresa_in = EmpresaCreate(nome="MUSTAFA") 
+        logger.info("Empresa principal não encontrada. Criando 'MUSTAFA'...")
+        empresa_in = EmpresaCreate(nome="MUSTAFA")
         crud_empresa.create_empresa(db, empresa=empresa_in)
         logger.info("Empresa 'MUSTAFA' criada com sucesso.")
     else:

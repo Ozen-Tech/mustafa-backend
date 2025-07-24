@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from typing import List # <<< IMPORTAR LIST
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -13,16 +14,57 @@ from app.schemas import contrato as schemas_contrato
 from app.dependencies import get_current_user
 
 # --- Configuração ---
-router = APIRouter(prefix="/contratos", tags=["Contratos"])
+router = APIRouter()
 UPLOAD_DIRECTORY = "./uploads"
 
-@router.post("/upload", response_model=schemas_contrato.Contrato)
+# =========================================================================
+# <<< ROTA ADICIONADA AQUI >>>
+# =========================================================================
+@router.get("", response_model=List[schemas_contrato.Contrato], summary="Lista todos os contratos da empresa")
+def read_contratos(
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna uma lista de todos os contratos registrados para a empresa
+    do usuário autenticado. A lista é ordenada do mais recente para o mais antigo.
+    """
+    # 1. Usar o CRUD para buscar os contratos do banco de dados de forma segura.
+    #    A função já filtra pela empresa do usuário logado.
+    db_contratos = crud_contrato.get_contratos_by_empresa(
+        db=db, empresa_id=current_user.empresa_id
+    )
+
+    # 2. Como nosso schema de resposta (schemas.Contrato) espera uma 'url_acesso',
+    #    e o banco armazena apenas o caminho, precisamos construir a resposta.
+    response_list = []
+    for contrato in db_contratos:
+        # Gera a URL de acesso público para cada arquivo de contrato.
+        url_acesso = f"/arquivos-contratos/{contrato.nome_arquivo_servidor}"
+        
+        # Constrói o objeto de resposta Pydantic, garantindo que ele tenha o formato correto.
+        response_contrato = schemas_contrato.Contrato(
+            id=contrato.id,
+            nome_promotor=contrato.nome_promotor,
+            cpf_promotor=contrato.cpf_promotor,
+            nome_arquivo_original=contrato.nome_arquivo_original,
+            data_upload=contrato.data_upload,
+            usuario_id=contrato.usuario_id,
+            url_acesso=url_acesso  # Adiciona a URL que criamos dinamicamente
+        )
+        response_list.append(response_contrato)
+
+    return response_list
+
+# =============================================================
+# Sua rota de upload existente (não altere)
+# =============================================================
+@router.post("/upload", response_model=schemas_contrato.Contrato, summary="Upload de um novo contrato")
 async def upload_contrato_assinado(
-    # FastAPI injeta os dados do formulário e o arquivo aqui
+    # (O restante da sua função de upload permanece igual...)
     file: UploadFile = File(..., description="Arquivo do contrato (.pdf, .jpg, .png)"),
     nome_promotor: str = Form(..., description="Nome completo do promotor"),
     cpf_promotor: str = Form(..., description="CPF do promotor"),
-    # Dependências de segurança e banco de dados
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -30,6 +72,7 @@ async def upload_contrato_assinado(
     Endpoint para um promotor fazer o upload de um contrato assinado.
     O sistema salva o arquivo, registra no banco e o associa ao usuário logado.
     """
+    # ... (toda a lógica da sua função de upload continua aqui)
     # 1. Validação simples do tipo de arquivo (pode ser melhorada)
     if file.content_type not in ["application/pdf", "image/jpeg", "image/png"]:
         raise HTTPException(status_code=400, detail="Formato de arquivo inválido. Apenas PDF, JPG ou PNG são permitidos.")
@@ -60,7 +103,6 @@ async def upload_contrato_assinado(
     )
 
     # 5. Criar a URL de acesso dinamicamente para o retorno da API
-    # (A rota para servir esse arquivo será criada no Passo 6)
     url_acesso = f"/arquivos-contratos/{nome_arquivo_servidor}"
     
     # Montar o objeto de resposta final
