@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from app.db.connection import get_db
 from app.crud import usuario as crud_usuario, foto_promotor as crud_foto
 from app.core.config import settings
-
+from twilio.rest import Client
 
 router = APIRouter(prefix="/webhook")
 
