@@ -3,6 +3,7 @@ import typer
 from sqlalchemy.orm import Session
 import click
 
+# <<<< CORREÇÃO: As importações agora começam com 'app.' >>>>
 from app.db.connection import get_db
 from app.crud import usuario as crud_usuario
 from app.schemas import usuario as schemas_usuario
@@ -33,7 +34,7 @@ def create_user(
             nome=nome,
             email=email,
             password=password,
-            perfil=perfil.value, # Pega o valor da Enum
+            perfil=perfil.value,
             empresa_id=empresa_id,
         )
 
@@ -47,11 +48,23 @@ def create_user(
     finally:
         db.close()
 
-# A função list_users continua a mesma
 @cli_app.command()
 def list_users():
     """Lista todos os usuários cadastrados."""
-    # ... (código sem alterações)
+    db: Session = next(get_db())
+    try:
+        users = db.query(models.Usuario).all()
+        if not users:
+            print("Nenhum usuário encontrado.")
+            return
+
+        print("\n--- 👥 Lista de Usuários ---")
+        for user in users:
+            print(f"- ID: {user.id}, Nome: {user.nome}, E-mail: {user.email}, Perfil: {user.perfil}, Ativo: {user.is_active}")
+        print("-" * 20)
+
+    finally:
+        db.close()
 
 if __name__ == "__main__":
     cli_app()
