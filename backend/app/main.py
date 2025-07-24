@@ -10,14 +10,10 @@ app = FastAPI(
     description="API para gestão de fotos de promotores via WhatsApp.", 
     version="2.0.0"
 )
-VERCEL_PRODUCTION_URL = "mustafa-backend-enzoalmeida21s-projects.vercel.app"
-
-
 # Configuração do CORS (já estava correta)
 origins = [
     "http://localhost:3000",
-    f"https://{VERCEL_PRODUCTION_URL}",
-    f"https://www.{VERCEL_PRODUCTION_URL}",
+    "https://mustafa-backend-enzoalmeida21s-projects.vercel.app"
     "https://mustafa-backend-k4w21ohkh-enzoalmeida21s-projects.vercel.app"
 ]
 
