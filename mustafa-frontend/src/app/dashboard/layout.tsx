@@ -11,7 +11,8 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push('/login');
+      // CORREÇÃO CRÍTICA AQUI TAMBÉM: A rota de proteção deve apontar para o caminho completo
+      router.push('/login'); 
     }
   }, [isLoading, isAuthenticated, router]);
 
