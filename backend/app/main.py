@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 # Nossos routers
 from app.routers import auth, empresas, insights, contratos as contratos_router, webhook_whatsapp, fotos
 from fastapi.staticfiles import StaticFiles
-import re
 
 # Criação da instância principal do FastAPI
 app = FastAPI(
@@ -12,7 +11,6 @@ app = FastAPI(
     version="2.0.0"
 )
 
-origins_regex = r"https?://(.*\.)?vercel\.app" 
 
 
 # Configuração do CORS (já estava correta)
@@ -26,7 +24,6 @@ allowed_origins.append(origins_regex)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-     allow_origin_regex=origins_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
