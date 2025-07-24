@@ -1,31 +1,27 @@
 "use client"; 
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import Cookies from 'js-cookie';
+import Cookies from 'js-cookie'; // js-cookie só é usado no lado do cliente aqui, o que está correto
 
-// Define o formato do seu usuário e do contexto
+// Interfaces
 interface User {
   nome: string;
   email: string;
   perfil: string;
 }
-
 interface LoginParams {
   email: string;
   password: string;
 }
-
 interface AuthContextType {
   user: User | null;
-  isAuthenticated: boolean; // Adicionado para facilitar a checagem
-  login: (data: LoginParams) => Promise<void>; 
+  isAuthenticated: boolean;
+  login: (data: LoginParams) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
-
-
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -34,21 +30,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const token = Cookies.get('accessToken'); // <<<<<< LER DOS COOKIES
+  // Função para verificar o token e buscar dados do usuário.
+  const checkAuth = useCallback(async () => {
+    const token = Cookies.get('accessToken');
     if (token) {
       api.defaults.headers.Authorization = `Bearer ${token}`;
-      api.get('/users/me')
-        .then(response => { setUser(response.data); })
-        .catch(() => {
-          Cookies.remove('accessToken'); // Limpar cookie inválido
-          setUser(null);
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+      try {
+        const response = await api.get('/users/me');
+        setUser(response.data);
+      } catch {
+        Cookies.remove('accessToken');
+        setUser(null);
+      }
     }
+    setIsLoading(false);
   }, []);
+  
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (formData: LoginParams) => {
     const params = new URLSearchParams();
@@ -58,20 +58,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const response = await api.post('/users/token', params);
     const { access_token } = response.data;
     
-    Cookies.set('accessToken', access_token, { expires: 7, secure: true }); // <<<< SALVAR NO COOKIE
-    api.defaults.headers.Authorization = `Bearer ${access_token}`;
+    Cookies.set('accessToken', access_token, { expires: 7, secure: true });
     
-    const userResponse = await api.get('/users/me');
-    setUser(userResponse.data);
+    // Após o login, atualiza os dados do usuário. O redirecionamento
+    // será feito pela página de login.
+    await checkAuth();
   };
 
   const logout = () => {
-    Cookies.remove('accessToken'); // <<<< REMOVER DO COOKIE
+    Cookies.remove('accessToken');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     router.push('/login'); 
   };
-
+  
   return (
     <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout, isLoading }}>
       {children}
@@ -79,11 +79,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
-// Hook customizado para facilitar o uso do contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
-  }
+  if (!context) throw new Error('useAuth deve ser usado dentro de um AuthProvider');
   return context;
 };
