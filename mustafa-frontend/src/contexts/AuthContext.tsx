@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('accessToken');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    router.push('/login'); // Após o logout, sempre vai para a tela de login
+    router.push('/auth/login'); // Após o logout, sempre vai para a tela de login
   };
 
   return (
