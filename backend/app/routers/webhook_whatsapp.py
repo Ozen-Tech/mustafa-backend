@@ -5,12 +5,16 @@ from fastapi import APIRouter, Depends, Form, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.db.connection import get_db
 from app.crud import usuario as crud_usuario, foto_promotor as crud_foto
+from app.core.config import settings
+
 
 router = APIRouter(prefix="/webhook")
 
 # ================== SUAS CREDENCIAIS AQUI ==================
-TWILIO_ACCOUNT_SID = "AC42a464bfabee430676ecd3d55967a6d3" 
-TWILIO_AUTH_TOKEN = "0b9a303a86272ba917ba50eb55c93be5"               
+TWILIO_ACCOUNT_SID = settings.TWILIO_ACCOUNT_SID
+TWILIO_AUTH_TOKEN = settings.TWILIO_AUTH_TOKEN          
+
+client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 # ========================================================
 
 UPLOAD_DIRECTORY = "./uploads/fotos_promotores"
