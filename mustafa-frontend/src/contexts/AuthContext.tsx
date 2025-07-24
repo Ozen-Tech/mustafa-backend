@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
+import Cookies from 'js-cookie';
 
 // Define o formato do seu usuário e do contexto
 interface User {
@@ -35,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Efeito que roda na inicialização para verificar se o usuário já tem um token válido
   useEffect(() => {
-    const token = localStorage.getItem('accessToken');
+    const token = Cookies.get('accessToken');
     if (token) {
       // Se o token existe, define o header padrão para futuras requisições
       api.defaults.headers.Authorization = `Bearer ${token}`;
@@ -46,7 +47,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         })
         .catch(() => {
           // Se o token for inválido (ex: expirado), limpa tudo
-          localStorage.removeItem('accessToken');
+          Cookies.remove('accessToken');
           setUser(null);
         })
         .finally(() => {
@@ -70,7 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { access_token } = response.data;
     
     // 2. Salva o token e configura o header padrão da API
-    localStorage.setItem('accessToken', access_token);
+    Cookies.set('accessToken', access_token, { expires: 7 })
     api.defaults.headers.Authorization = `Bearer ${access_token}`;
     
     // 3. Busca os dados do usuário para salvar no estado global
@@ -81,7 +82,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
+    Cookies.remove('accessToken');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     router.push('(auth)/login'); // Após o logout, sempre vai para a tela de login
