@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
+import Image from 'next/image'; // Importamos o componente otimizado de imagem
 
-// Interfaces para os dados
+// Interfaces para os tipos de dados
 interface FotoPromotor {
   id: number;
   url_foto: string;
@@ -27,23 +28,11 @@ export default function FotosPage() {
   const [dataFim, setDataFim] = useState('');
   const [buscaLegenda, setBuscaLegenda] = useState('');
 
-  // Busca inicial dos dados
-  useEffect(() => {
-    // Busca promotores para popular o dropdown de filtro
-    api.get('/users')
-      .then(response => {
-        setPromotores(response.data);
-      })
-      .catch(() => {
-        setError("Não foi possível carregar a lista de promotores.");
-      });
-    
-    // Busca as fotos iniciais (sem filtro)
-    fetchFotos();
-  }, []);
-
-  const fetchFotos = () => {
+  // Envolvemos a lógica de busca em uma função `useCallback`
+  // para estabilizá-la e usá-la como dependência do `useEffect` com segurança.
+  const fetchFotos = useCallback(() => {
     setLoading(true);
+    setError(null);
 
     const params = new URLSearchParams();
     if (selectedPromotor) params.append('promotor_id', selectedPromotor);
@@ -52,19 +41,37 @@ export default function FotosPage() {
     if (buscaLegenda) params.append('busca', buscaLegenda);
 
     api.get('/fotos', { params })
-      .then(response => setFotos(response.data))
+      .then(response => {
+        setFotos(response.data);
+      })
       .catch(err => {
         console.error("Falha ao buscar fotos:", err);
         setError("Não foi possível carregar as fotos.");
       })
-      .finally(() => setLoading(false));
-  };
-  
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [selectedPromotor, dataInicio, dataFim, buscaLegenda]); // A função só será recriada se um destes filtros mudar
+
+  // useEffect para buscar os dados iniciais
+  useEffect(() => {
+    api.get('/users')
+      .then(response => {
+        setPromotores(response.data);
+      })
+      .catch(() => {
+        setError("Não foi possível carregar a lista de promotores.");
+      });
+    
+    fetchFotos();
+  }, [fetchFotos]); // Este `useEffect` agora depende corretamente da função `fetchFotos`.
+
   const handleFilterSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchFotos();
   };
-
+  
+  // O JSX para renderização continua o mesmo, com a troca de <img> para <Image>
   return (
     <div>
       <h1 className="text-3xl font-bold mb-6 text-gray-800">Galeria de Fotos</h1>
@@ -88,7 +95,7 @@ export default function FotosPage() {
         </div>
         <div className="flex-2 min-w-[200px]">
           <label className="block text-sm font-medium text-gray-700">Buscar na Legenda</label>
-          <input type="text" value={buscaLegenda} onChange={e => setBuscaLegenda(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800" />
+          <input type="text" value={buscaLegenda} onChange={e => setBuscaLegenda(e.target.value)} placeholder="Nome da loja..." className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800" />
         </div>
         <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
           Filtrar
@@ -108,7 +115,13 @@ export default function FotosPage() {
             {fotos.map(foto => (
               <div key={foto.id} className="bg-white rounded-lg shadow-md overflow-hidden transform hover:scale-105 transition-transform duration-300">
                 <a href={`${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} target="_blank" rel="noopener noreferrer">
-                  <img src={`${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} alt={foto.legenda || 'Foto de promotor'} className="w-full h-48 object-cover" />
+                  <Image 
+                    src={`${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} 
+                    alt={foto.legenda || 'Foto de promotor'}
+                    width={300}
+                    height={300}
+                    className="w-full h-48 object-cover"
+                  />
                 </a>
                 <div className="p-4">
                   <p className="text-sm text-gray-800 truncate" title={foto.legenda || 'Sem legenda'}>
