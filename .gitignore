@@ -1,0 +1,73 @@
+# ===================================================================
+# Arquivo .gitignore para o Projeto Mustafa (Monorepo)
+# Backend: Python/FastAPI (Docker) | Frontend: Next.js
+# ===================================================================
+
+# Ignora este próprio arquivo se necessário (opcional)
+# .gitignore
+
+# === 1. Arquivos de Configuração de IDE e Sistema Operacional ===
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# VS Code
+.vscode/
+
+# JetBrains (PyCharm, WebStorm)
+.idea/
+
+# Log files
+*.log
+npm-debug.log*
+yarn-error.log
+
+# === 2. Backend - Python / FastAPI / Docker ===
+
+# Arquivos de ambiente - NUNCA ENVIE SUAS CHAVES SECRETAS!
+# Contém senhas de banco de dados, chaves de API, etc.
+.env
+
+# Pasta do ambiente virtual Python (se você criar uma localmente)
+venv/
+.venv/
+env/
+
+# Arquivos de cache e bytecode do Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Arquivos de configuração local do Docker que não devem ser compartilhados
+# O docker-compose.yml e Dockerfile PRINCIPAIS devem estar no Git.
+docker-compose.override.yml
+
+# === 3. Frontend - Node.js / Next.js ===
+
+# Pasta de dependências do Node - SEMPRE ignorar
+mustafa-frontend/node_modules/
+
+# Pasta de build do Next.js
+mustafa-frontend/.next/
+
+# Pasta de exportação estática do Next.js
+mustafa-frontend/out/
+
+# Arquivos de ambiente locais do Frontend - NUNCA ENVIE SUAS CHAVES
+mustafa-frontend/.env.local
+mustafa-frontend/.env.development.local
+mustafa-frontend/.env.production.local
+mustafa-frontend/.env.test.local
+
+# Pasta gerada pela Vercel
+mustafa-frontend/.vercel/
+
+# === 4. Dados Gerados pela Aplicação (MUITO IMPORTANTE!) ===
+
+# Pasta de uploads do usuário (fotos de promotores, contratos, etc.)
+# Commitar esses dados deixa o repositório pesado e expõe dados dos usuários.
+uploads/
