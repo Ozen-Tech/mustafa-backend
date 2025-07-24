@@ -34,58 +34,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Efeito que roda na inicialização para verificar se o usuário já tem um token válido
   useEffect(() => {
-    const token = Cookies.get('accessToken');
+    const token = Cookies.get('accessToken'); // <<<<<< LER DOS COOKIES
     if (token) {
-      // Se o token existe, define o header padrão para futuras requisições
       api.defaults.headers.Authorization = `Bearer ${token}`;
-      // E busca os dados do usuário para validar a sessão
       api.get('/users/me')
-        .then(response => {
-          setUser(response.data);
-        })
+        .then(response => { setUser(response.data); })
         .catch(() => {
-          // Se o token for inválido (ex: expirado), limpa tudo
-          Cookies.remove('accessToken');
+          Cookies.remove('accessToken'); // Limpar cookie inválido
           setUser(null);
         })
-        .finally(() => {
-          setIsLoading(false);
-        });
+        .finally(() => setIsLoading(false));
     } else {
-      // Se não há token, termina o carregamento
       setIsLoading(false);
     }
   }, []);
 
-
   const login = async (formData: LoginParams) => {
-    // Seu backend espera 'application/x-www-form-urlencoded' para o token
     const params = new URLSearchParams();
     params.append('username', formData.email);
     params.append('password', formData.password);
     
-    // 1. Pega o token
     const response = await api.post('/users/token', params);
     const { access_token } = response.data;
     
-    // 2. Salva o token e configura o header padrão da API
-    Cookies.set('accessToken', access_token, { expires: 7 })
+    Cookies.set('accessToken', access_token, { expires: 7, secure: true }); // <<<< SALVAR NO COOKIE
     api.defaults.headers.Authorization = `Bearer ${access_token}`;
     
-    // 3. Busca os dados do usuário para salvar no estado global
     const userResponse = await api.get('/users/me');
     setUser(userResponse.data);
-
-    // IMPORTANTE: A responsabilidade de redirecionar foi movida para a página de login.
   };
 
   const logout = () => {
-    Cookies.remove('accessToken');
+    Cookies.remove('accessToken'); // <<<< REMOVER DO COOKIE
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
-    router.push('(auth)/login'); // Após o logout, sempre vai para a tela de login
+    router.push('/login'); 
   };
 
   return (
