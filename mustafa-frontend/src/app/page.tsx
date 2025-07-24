@@ -20,6 +20,8 @@ export default function RootPage() {
     } else {
       router.replace('/auth/login'); // Se não, vai para o login
     }
+
+
     
   }, [isAuthenticated, isLoading, router]);
 
