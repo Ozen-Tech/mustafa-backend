@@ -9,7 +9,6 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https', 
         hostname: 'mustafa-backend-6ywg.onrender.com',
-        port: '',
         pathname: '/fotos-promotores/**', // Permite qualquer imagem dentro desta pasta
       },
     ],

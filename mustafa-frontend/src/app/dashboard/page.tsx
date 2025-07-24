@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
-import api from "@/lib/api";
+import { useAuth } from "@/contexts/AuthContext"; 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 
 // Tipagem para os dados que virão da API
 interface KpiData {

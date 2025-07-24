@@ -73,17 +73,17 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
     setError('');
 
     const isCreating = !promotor;
-    const url = isCreating ? '/users/' : `/users/${promotor.id}`;
+    const url = isCreating ? '/users/' : `/users/${promotor!.id}`;
     const method = isCreating ? 'post' : 'put';
     
     // Twilio exige o prefixo "whatsapp:"
     const whatsappCompleto = whatsapp ? `whatsapp:${whatsapp}` : '';
 
-    const payload: any = {
+    const payload: CreatePayload | UpdatePayload = {
       nome,
       email,
       perfil,
-      whatsapp_number: whatsappCompleto
+      whatsapp_number: whatsappCompleto,
     };
     
     if (isCreating) {
@@ -91,17 +91,18 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
         setError('A senha é obrigatória para criar um novo promotor.');
         return;
       }
-      payload.password = password;
-      payload.empresa_id = 1; // Ajuste se tiver lógica de multi-empresa
+      (payload as CreatePayload).password = password;
+      (payload as CreatePayload).empresa_id = 1; 
     }
     
     try {
       await api[method](url, payload);
-      onSave(); // Avisa a página pai para recarregar a lista
-      onClose(); // Fecha o modal
-    } catch (err: any) {
-      const error = err as AxiosError<{ detail: string }>;
-      setError(err.response?.data?.detail || "Ocorreu um erro. Tente novamente.");
+      onSave(); 
+      onClose(); 
+    } catch (err) {
+      // <<<<<< CORREÇÃO 2: Use a tipagem correta para o erro >>>>>>
+      const axiosError = err as AxiosError<{ detail: string }>;
+      setError(axiosError.response?.data?.detail || "Ocorreu um erro. Tente novamente.");
     }
   };
 
