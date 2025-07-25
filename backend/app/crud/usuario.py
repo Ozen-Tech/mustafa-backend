@@ -1,3 +1,5 @@
+# backend/app/crud/usuario.py
+
 from sqlalchemy.orm import Session, selectinload
 from app.db import models
 from app.schemas import usuario as schemas_usuario
@@ -13,7 +15,7 @@ def get_user_by_email(db: Session, email: str) -> models.Usuario | None:
     """Busca um usuário pelo e-mail."""
     return db.query(models.Usuario).filter(models.Usuario.email == email).first()
 
-def create_user(db: Session, user_in: schemas_usuario.UsuarioCreate, empresa_id: int) -> models.Usuario:
+def create_user(db: Session, user_in: schemas_usuario.UsuarioCreate) -> models.Usuario: # Removido empresa_id
     """Cria um novo usuário no banco de dados."""
     hashed_password = get_password_hash(user_in.password)
     
@@ -21,8 +23,9 @@ def create_user(db: Session, user_in: schemas_usuario.UsuarioCreate, empresa_id:
         email=user_in.email,
         hashed_password=hashed_password,
         nome=user_in.nome,
-        empresa_id=empresa_id,
-        perfil=user_in.perfil,
+        empresa_id=user_in.empresa_id,
+        # << ATUALIZADO >> Usa .value para pegar a string do Enum
+        perfil=user_in.perfil.value, 
         whatsapp_number=user_in.whatsapp_number
     )
     
@@ -44,10 +47,11 @@ def authenticate_user(db: Session, email: str, password: str) -> models.Usuario 
     return user
 
 def get_users_by_empresa(db: Session, empresa_id: int):
-    """Retorna todos os usuários de uma empresa."""
+    """Retorna todos os usuários de uma empresa, com seus contratos."""
     return (
         db.query(models.Usuario)
-        .options(selectinload(models.Usuario.contratos))
+        # << ATUALIZADO >> Carrega os contratos junto com os usuários para evitar múltiplas queries
+        .options(selectinload(models.Usuario.contratos)) 
         .filter(models.Usuario.empresa_id == empresa_id)
         .order_by(models.Usuario.nome)
         .all()
@@ -59,7 +63,13 @@ def update_user(db: Session, user_id: int, user_in: schemas_usuario.UsuarioUpdat
     if not db_user:
         return None
 
+    # Usa .model_dump() do Pydantic V2
     update_data = user_in.model_dump(exclude_unset=True)
+
+    # << ATUALIZADO >> Converte o enum para string se ele for passado na atualização
+    if "perfil" in update_data and isinstance(update_data["perfil"], schemas_usuario.PerfilUsuario):
+        update_data["perfil"] = update_data["perfil"].value
+
     for key, value in update_data.items():
         setattr(db_user, key, value)
     

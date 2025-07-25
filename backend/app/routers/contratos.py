@@ -65,6 +65,7 @@ async def upload_contrato_assinado(
     file: UploadFile = File(..., description="Arquivo do contrato (.pdf, .jpg, .png)"),
     nome_promotor: str = Form(..., description="Nome completo do promotor"),
     cpf_promotor: str = Form(..., description="CPF do promotor"),
+    usuario_id: int = Form(..., description="ID do usuário a quem o contrato pertence"),
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
@@ -98,7 +99,7 @@ async def upload_contrato_assinado(
         nome_original=file.filename,
         nome_servidor=nome_arquivo_servidor,
         caminho=caminho_completo,
-        usuario_id=current_user.id,
+        usuario_id=usuario_id,
         empresa_id=current_user.empresa_id
     )
 
