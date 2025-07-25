@@ -14,7 +14,8 @@ app = FastAPI(
 origins = [
     "http://localhost:3000",
     "https://https://mustafa-backend-i589jxtuc-enzoalmeida21s-projects.vercel.app",
-    "https://mustafa-backend-enzoalmeida21s-projects.vercel.app"
+    "https://mustafa-backend-enzoalmeida21s-projects.vercel.app",
+    "https://mustafa-system.vercel.app"
 ]
 
 
