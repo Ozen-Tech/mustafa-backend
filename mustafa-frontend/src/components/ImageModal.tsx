@@ -1,52 +1,41 @@
 "use client";
 
-import Image from 'next/image';
-
 interface ImageModalProps {
   isOpen: boolean;
   onClose: () => void;
   imageUrl: string;
-  altText?: string;
+  altText: string;
+  onNext?: () => void;
+  onPrev?: () => void;
+  promotorNome?: string;
+  dataEnvio?: string;
 }
 
-export const ImageModal = ({ isOpen, onClose, imageUrl, altText = 'Imagem ampliada' }: ImageModalProps) => {
-  if (!isOpen || !imageUrl) {
-    return null;
-  }
-
-  // Função para fechar o modal ao clicar no fundo
-  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
-  };
+export const ImageModal = ({ isOpen, onClose, imageUrl, altText, onNext, onPrev, promotorNome, dataEnvio }: ImageModalProps) => {
+  if (!isOpen) return null;
 
   return (
-    // Fundo semi-transparente que cobre a tela inteira
-    <div
-      onClick={handleBackdropClick}
-      className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4 transition-opacity duration-300"
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" 
+      onClick={onClose}
     >
-      {/* Container da imagem e do botão de fechar */}
-      <div className="relative max-w-4xl max-h-[90vh] bg-white rounded-lg shadow-xl p-2">
-        {/* Botão de Fechar */}
-        <button
-          onClick={onClose}
-          className="absolute -top-4 -right-4 bg-white text-black rounded-full h-10 w-10 flex items-center justify-center text-2xl font-bold z-10 hover:bg-gray-200 transition-colors"
-          aria-label="Fechar imagem"
-        >
-          ×
-        </button>
+      {/* Botão de Fechar */}
+      <button className="absolute top-4 right-4 text-white text-3xl z-50">×</button>
 
-        {/* A Imagem Ampliada */}
-        <Image
-          src={imageUrl}
-          alt={altText}
-          width={1200} // Valor alto para qualidade, o CSS vai limitar o tamanho
-          height={800} // Valor alto para qualidade, o CSS vai limitar o tamanho
-          className="object-contain w-full h-full max-h-[85vh] rounded"
-          style={{ objectFit: 'contain' }} // Garante que a imagem inteira apareça
-        />
+      {/* Botões de Navegação (se aplicável) */}
+      {onPrev && <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl p-2 bg-black bg-opacity-30 rounded-full">‹</button>}
+      {onNext && <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl p-2 bg-black bg-opacity-30 rounded-full">›</button>}
+
+      <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
+        <img src={imageUrl} alt={altText} className="w-full h-auto max-h-[90vh] object-contain" />
+
+        {/* Informações da Foto (se aplicável) */}
+        {promotorNome && (
+            <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white p-4">
+                <p className="font-bold">{promotorNome}</p>
+                <p className="text-sm">{new Date(dataEnvio!).toLocaleString('pt-BR')}</p>
+            </div>
+        )}
       </div>
     </div>
   );

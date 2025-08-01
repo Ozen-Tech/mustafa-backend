@@ -1,47 +1,57 @@
+# backend/app/services/ai_service.py
 import google.generativeai as genai 
-from typing import List, Dict, Any
 from app.core.config import settings
+from datetime import date, timedelta
 
- # Configura a API uma vez, quando o módulo é carregado.
+# Configura a API
 try:
-     genai.configure(api_key=settings.GOOGLE_API_KEY)
-     model = genai.GenerativeModel('gemini-2.0-flash') # Modelo rápido e eficiente
-     print("✅ Modelo de IA Gemini inicializado com sucesso.")
+    genai.configure(api_key=settings.GOOGLE_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    print("✅ Modelo de IA Gemini inicializado com sucesso.")
 except Exception as e:
-     print(f"❌ Erro ao configurar a API do Gemini: {e}")
-     model = None
+    print(f"❌ Erro ao configurar a API do Gemini: {e}")
+    model = None
 
 def generate_analysis_from_data(user_question: str, system_data: str) -> str:
-     """
-     Função genérica para enviar uma pergunta e dados contextuais para a IA.
-     """
-     if not model:
-         return "Erro: O modelo de IA não foi inicializado corretamente. Verifique a chave da API no servidor."
+    """Gera uma análise com base em uma pergunta e dados contextuais."""
+    if not model:
+        return "Erro: O modelo de IA não foi inicializado. Verifique a chave da API no servidor."
      
-     # Este é o nosso "Mega Prompt". É a instrução principal para a IA.
-     prompt_template = f"""
-     Você é o "Assistente de Análise Mustafa", uma IA especialista em gestão de estoque e análise de dados de negócios. 
-     Sua função é ajudar o gestor a entender os dados do sistema e tomar melhores decisões.
+    prompt_template = f"""
+    **PERSONA:** Você é a "Análise Inteligente Mustafa", uma IA especialista em análise de dados de trade marketing e otimização de equipes de campo. Você é proativo, analítico e focado em gerar valor para o gestor.
+
+    **OBJETIVO:** Responder à pergunta do gestor de forma clara, concisa e acionável, utilizando **exclusivamente** os dados fornecidos no contexto JSON.
+
+    **CONTEXTO DOS DADOS:**
+    Os dados fornecidos em JSON representam registros de fotos enviadas por promotores de vendas em campo. A seção `contexto_analise` define o período e o objetivo geral dos dados.
+
+    ---
+    **DADOS DISPONÍVEIS:**
+    ```json
+    {system_data}
+    ```
+    ---
+
+    **PERGUNTA DO GESTOR:**
+    "{user_question}"
+
+    ---
+
+    **INSTRUÇÕES DE RESPOSTA:**
+
+    1.  **Seja Direto:** Comece a resposta indo direto ao ponto da pergunta do gestor. Evite introduções longas.
+    2.  **Estrutura Clara:** Use Markdown para formatar sua resposta. Use títulos (`##`), negrito (`**`) e listas (`*`) para máxima legibilidade.
+    3.  **Baseado em Evidências:** Justifique suas respostas com base nos dados. Se você listar lojas, é porque as viu nas legendas. Se falar de um promotor, é porque o nome dele está nos registros.
+    4.  **Aponte Limitações (Seja Honesto):** Se os dados não forem suficientes para responder 100% à pergunta (ex: a pergunta é sobre "a semana toda" mas os dados são de apenas um dia), responda com o que você tem e **explique claramente a limitação**.
+    5.  **Gere Insights Acionáveis:** Após responder, adicione uma seção `## Insights e Recomendações`. Procure por padrões, anomalias ou oportunidades nos dados e sugira ações para o gestor.
+        *   *Exemplos de Insights:* "Notei que o Promotor X visitou a mesma loja 3 vezes no período, o que pode indicar um problema de abastecimento ou uma oportunidade de negociação." OU "A maioria das fotos está concentrada na cidade Y, sugerindo uma baixa cobertura na cidade Z."
+
+    Responda em português do Brasil.
+    """
      
-     O gestor fez a seguinte pergunta: 
-     "{user_question}"
-     
-     Para te ajudar a responder, aqui estão os dados relevantes do sistema no momento da pergunta. Use-os para basear sua resposta.
-     ---
-     DADOS DO SISTEMA:
-     {system_data}
-     ---
-     
-     Instruções para sua resposta:
-     1. Responda de forma clara, profissional e direta.
-     2. Utilize o formato Markdown para melhorar a legibilidade (use títulos, negrito e listas).
-     3. Se os dados fornecidos não forem suficientes para responder à pergunta, explique o motivo e sugira que tipo de dado seria necessário.
-     4. Se a pergunta for fora do escopo de gestão de estoque, recuse educadamente.
-     """
-     
-     try:
-         response = model.generate_content(prompt_template)
-         return response.text
-     except Exception as e:
-         return f"Ocorreu um erro ao comunicar com a IA: {e}"
- 
+    try:
+        response = model.generate_content(prompt_template)
+        return response.text
+    except Exception as e:
+        print(f"Erro na API da IA: {e}")
+        return f"Ocorreu um erro ao comunicar com o serviço de IA: {e}"

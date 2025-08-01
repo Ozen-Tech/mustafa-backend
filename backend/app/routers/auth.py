@@ -12,7 +12,6 @@ from app.crud import usuario as crud_usuario
 from app.dependencies import create_access_token, get_current_user
 
 router = APIRouter(
-    # Movido o prefixo para o main.py para maior clareza
     tags=["Usuários e Autenticação"]
 )
 
@@ -30,14 +29,12 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     return {"access_token": access_token, "token_type": "bearer"}
 
 
-# << ATUALIZADO >> Rota para criar um usuário. Agora ela retorna o usuário completo com ID.
 @router.post("", response_model=schemas_usuario.Usuario, status_code=status.HTTP_201_CREATED)
 def create_new_user(
     user_in: schemas_usuario.UsuarioCreate, 
     db: Session = Depends(get_db),
-    current_user: models.Usuario = Depends(get_current_user) # Protegido, apenas usuários logados podem criar outros
+    current_user: models.Usuario = Depends(get_current_user)
 ):
-    # Regra de negócio: Apenas Admins podem criar outros usuários
     if current_user.perfil != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores podem criar novos usuários.")
 
@@ -48,38 +45,59 @@ def create_new_user(
             detail="E-mail já registrado."
         )
     
-    # << ATUALIZADO >> Associa o novo usuário à mesma empresa do admin que o está criando
     user_in.empresa_id = current_user.empresa_id
     
-    return crud_usuario.create_user(db=db, user_in=user_in)
+    # Criamos o usuário e o Pydantic vai validar e retornar o schema correto
+    created_user = crud_usuario.create_user(db=db, user_in=user_in)
+    return schemas_usuario.Usuario.model_validate(created_user)
 
 
 @router.get("/me", response_model=schemas_usuario.Usuario)
 def read_users_me(current_user: models.Usuario = Depends(get_current_user)):
     """Retorna os dados do usuário atualmente logado."""
-    return current_user
+    # << A MESMA LÓGICA DE CONSTRUÇÃO DE URL DEVE SER APLICADA AQUI >>
+    # Valida o usuário do banco contra o schema de resposta
+    response_user = schemas_usuario.Usuario.model_validate(current_user)
+    # Constrói as URLs de acesso para os contratos do usuário logado
+    response_user.contratos = [
+        schemas_usuario.ContratoInfo(
+            id=c.id,
+            nome_arquivo_original=c.nome_arquivo_original,
+            url_acesso=f"/arquivos-contratos/{c.nome_arquivo_servidor}"
+        ) for c in current_user.contratos
+    ]
+    return response_user
 
 
+# <<<<<<<<<<<<<<< A CORREÇÃO PRINCIPAL ESTÁ AQUI >>>>>>>>>>>>>>>>>
 @router.get("", response_model=List[schemas_usuario.Usuario], summary="Lista todos os usuários da empresa")
 def read_users(
     db: Session = Depends(get_db), 
     current_user: models.Usuario = Depends(get_current_user)
 ):
     """Retorna uma lista de usuários da empresa do usuário logado."""
-    users_db = crud_usuario.get_users_by_empresa(db, empresa_id=current_user.empresa_id)
-    # << ATUALIZADO >> Precisamos construir a resposta com a URL de acesso completa para os contratos
+    users_from_db = crud_usuario.get_users_by_empresa(db, empresa_id=current_user.empresa_id)
+    
+    # Precisamos transformar os objetos do SQLAlchemy em objetos de schema Pydantic,
+    # construindo a `url_acesso` dinamicamente no processo.
+    
     response_list = []
-    for user in users_db:
-        user_schema = schemas_usuario.Usuario.model_validate(user)
+    for user_db in users_from_db:
+        # 1. Valida o usuário do banco contra o schema de usuário
+        user_schema = schemas_usuario.Usuario.model_validate(user_db)
+        
+        # 2. Itera sobre os contratos do usuário e cria os `ContratoInfo` schemas com a URL
         user_schema.contratos = [
             schemas_usuario.ContratoInfo(
                 id=c.id,
                 nome_arquivo_original=c.nome_arquivo_original,
                 url_acesso=f"/arquivos-contratos/{c.nome_arquivo_servidor}"
             )
-            for c in user.contratos
+            for c in user_db.contratos
         ]
+        
         response_list.append(user_schema)
+
     return response_list
 
 
@@ -90,7 +108,6 @@ def update_user_details(
     db: Session = Depends(get_db),
     current_user: models.Usuario = Depends(get_current_user)
 ):
-    """Atualiza as informações de um usuário."""
     if current_user.perfil != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas administradores podem editar usuários.")
 
@@ -98,5 +115,13 @@ def update_user_details(
     if db_user is None:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     
-    # Retornar o schema completo após a atualização
-    return schemas_usuario.Usuario.model_validate(db_user)
+    # Também precisa construir a resposta aqui para ser consistente
+    response_user = schemas_usuario.Usuario.model_validate(db_user)
+    response_user.contratos = [
+        schemas_usuario.ContratoInfo(
+            id=c.id,
+            nome_arquivo_original=c.nome_arquivo_original,
+            url_acesso=f"/arquivos-contratos/{c.nome_arquivo_servidor}"
+        ) for c in db_user.contratos
+    ]
+    return response_user

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { PromotorFormModal } from '@/components/PromotorFormModal';
-import { ImageModal } from '@/components/ImageModal'; // Reutilizaremos o modal de imagem para ver o contrato
+import { ImageModal } from '@/components/ImageModal';
 
 // Interfaces dos dados
 interface ContratoInfo {
@@ -30,15 +30,13 @@ export default function PromotoresPage() {
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingPromotor, setEditingPromotor] = useState<User | null>(null);
   
-  // Estados para o modal de visualização de contrato
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contractImageUrl, setContractImageUrl] = useState('');
-
 
   const fetchPromotores = () => {
     setLoading(true);
     setError(null);
-    api.get('/users')
+    api.get<User[]>('/users')
       .then(response => setPromotores(response.data))
       .catch(() => setError("Falha ao carregar promotores."))
       .finally(() => setLoading(false));
@@ -51,7 +49,10 @@ export default function PromotoresPage() {
   const handleOpenCreateModal = () => { setEditingPromotor(null); setIsFormModalOpen(true); };
   const handleOpenEditModal = (promotor: User) => { setEditingPromotor(promotor); setIsFormModalOpen(true); };
   const handleCloseFormModal = () => setIsFormModalOpen(false);
-  const handleSave = () => fetchPromotores(); // Recarrega a lista após salvar
+  const handleSave = () => {
+    setIsFormModalOpen(false);
+    fetchPromotores();
+  };
 
   const handleOpenContractModal = (url: string) => { setContractImageUrl(url); setIsContractModalOpen(true); };
   const handleCloseContractModal = () => setIsContractModalOpen(false);
@@ -107,7 +108,6 @@ export default function PromotoresPage() {
 
       <PromotorFormModal isOpen={isFormModalOpen} onClose={handleCloseFormModal} onSave={handleSave} promotor={editingPromotor} />
       
-      {/* Reutilizando o ImageModal para visualizar contratos */}
       <ImageModal isOpen={isContractModalOpen} onClose={handleCloseContractModal} imageUrl={contractImageUrl} altText="Visualização de Contrato"/>
     </>
   );

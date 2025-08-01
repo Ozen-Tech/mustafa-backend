@@ -1,15 +1,16 @@
+// src/contexts/AuthContext.tsx
+
 "use client"; 
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/api';
-import Cookies from 'js-cookie'; // js-cookie só é usado no lado do cliente aqui, o que está correto
+import Cookies from 'js-cookie';
 
-// Interfaces
 interface User {
   nome: string;
   email: string;
-  perfil: string;
+  perfil: 'ADMIN' | 'GESTOR' | 'OPERADOR';
 }
 interface LoginParams {
   email: string;
@@ -30,17 +31,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  // Função para verificar o token e buscar dados do usuário.
   const checkAuth = useCallback(async () => {
     const token = Cookies.get('accessToken');
     if (token) {
-      api.defaults.headers.Authorization = `Bearer ${token}`;
+      // Configura o header padrão para todas as futuras requisições do api
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       try {
         const response = await api.get('/users/me');
         setUser(response.data);
       } catch {
+        // Se o token for inválido, limpa tudo
         Cookies.remove('accessToken');
         setUser(null);
+        // <<<< CORREÇÃO APLICADA AQUI TAMBÉM (Boa Prática) >>>>
+        delete api.defaults.headers.common['Authorization'];
       }
     }
     setIsLoading(false);
@@ -58,15 +62,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const response = await api.post('/users/token', params);
     const { access_token } = response.data;
     
-    Cookies.set('accessToken', access_token, { expires: 7, secure: true });
+    // Configura o cookie e o header padrão imediatamente
+    Cookies.set('accessToken', access_token, { expires: 7, secure: true, sameSite: 'strict' });
+    api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
     
-    // Após o login, atualiza os dados do usuário. O redirecionamento
-    // será feito pela página de login.
+    // Atualiza os dados do usuário no contexto
     await checkAuth();
   };
 
   const logout = () => {
     Cookies.remove('accessToken');
+    // <<<< CORREÇÃO PRINCIPAL AQUI >>>>
+    // Em vez de 'api.defaults.headers.Authorization = undefined;', usamos 'delete'
+    // para remover completamente a propriedade do objeto de headers.
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     router.push('/login'); 
