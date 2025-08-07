@@ -7,6 +7,7 @@ export default function InsightsPage() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleAsk = async () => {
     if (!question.trim()) return;
@@ -15,8 +16,9 @@ export default function InsightsPage() {
     try {
       const response = await api.post('/insights/ask', { question });
       setAnswer(response.data.answer);
-    } catch (error) {
-      setAnswer('Ocorreu um erro ao consultar a IA. Tente novamente mais tarde.');
+    } catch (err) { // <<<< Use 'err' e defina o estado de erro
+      console.error("Erro na consulta à IA:", err);
+      setError('Ocorreu um erro ao consultar a IA. Tente novamente mais tarde.');
     } finally {
       setIsLoading(false);
     }
@@ -42,6 +44,8 @@ export default function InsightsPage() {
           disabled={isLoading}
           className="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-indigo-300"
         >
+          {error && <p className="text-red-500 mt-4">{error}</p>}
+
           {isLoading ? 'Analisando...' : 'Perguntar à IA'}
         </button>
 

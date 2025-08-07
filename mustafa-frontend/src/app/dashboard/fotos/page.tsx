@@ -49,7 +49,10 @@ export default function FotosPage() {
     
     api.get<FotoPromotor[]>('/fotos', { params })
       .then(response => setFotos(response.data))
-      .catch(() => setError("Não foi possível carregar as fotos."))
+      .catch((err) => { // <<<< Usando a variável 'err'
+        console.error("Falha ao buscar fotos:", err); 
+        setError("Não foi possível carregar as fotos.");
+      })
       .finally(() => setLoading(false));
   }, [selectedPromotor, dataInicio, dataFim, buscaLegenda]);
 
