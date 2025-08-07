@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import Link from 'next/link';
 import { PromotorFormModal } from '@/components/PromotorFormModal';
 import { ImageModal } from '@/components/ImageModal';
 

@@ -1,42 +1,14 @@
-// --- START OF FILE src/components/PromotorFormModal.tsx (VERSÃO FINAL CORRIGIDA) ---
 "use client";
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { AxiosError } from 'axios';
 
-// Interfaces dos dados
-interface User {
-  id: number;
-  nome: string;
-  email: string;
-  perfil: string;
-  whatsapp_number: string | null;
-  is_active: boolean;
-}
-
-interface PromotorFormModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSave: () => void;
-  promotor: User | null;
-}
-
-// Tipos para os payloads da API
-interface CreatePayload {
-  nome: string;
-  email: string;
-  perfil: string;
-  whatsapp_number: string;
-  password?: string;
-  empresa_id?: number;
-}
-interface UpdatePayload {
-  nome?: string;
-  email?: string;
-  perfil?: string;
-  whatsapp_number?: string;
-}
+// Interfaces
+interface User { id: number; nome: string; email: string; perfil: string; whatsapp_number: string | null; is_active: boolean; }
+interface PromotorFormModalProps { isOpen: boolean; onClose: () => void; onSave: () => void; promotor: User | null; }
+interface CreatePayload { nome: string; email: string; perfil: string; whatsapp_number: string; password?: string; empresa_id?: number; }
+interface UpdatePayload { nome?: string; email?: string; perfil?: string; whatsapp_number?: string; }
 
 export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: PromotorFormModalProps) => {
   const [nome, setNome] = useState('');
@@ -50,19 +22,12 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
     if (promotor) {
       setNome(promotor.nome);
       setEmail(promotor.email);
-      // Remove o "whatsapp:" para exibir no formulário
       setWhatsapp(promotor.whatsapp_number?.replace('whatsapp:', '') || '');
       setPerfil(promotor.perfil);
-      setPassword('');
     } else {
-      // Limpa para criação
-      setNome('');
-      setEmail('');
-      setWhatsapp('');
-      setPerfil('OPERADOR');
-      setPassword('');
+      setNome(''); setEmail(''); setWhatsapp(''); setPerfil('OPERADOR');
     }
-    setError('');
+    setPassword(''); setError('');
   }, [promotor, isOpen]);
 
   if (!isOpen) return null;
@@ -75,21 +40,12 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
     const url = isCreating ? '/users/' : `/users/${promotor!.id}`;
     const method = isCreating ? 'post' : 'put';
     
-    // Adiciona o prefixo "whatsapp:" se o campo não estiver vazio
     const whatsappCompleto = whatsapp ? `whatsapp:${whatsapp}` : '';
 
-    const payload: CreatePayload | UpdatePayload = {
-      nome,
-      email,
-      perfil,
-      whatsapp_number: whatsappCompleto,
-    };
+    const payload: CreatePayload | UpdatePayload = { nome, email, perfil, whatsapp_number: whatsappCompleto };
     
     if (isCreating) {
-      if (!password) {
-        setError('A senha é obrigatória para criar um novo promotor.');
-        return;
-      }
+      if (!password) { setError('A senha é obrigatória.'); return; }
       (payload as CreatePayload).password = password;
       (payload as CreatePayload).empresa_id = 1; 
     }
@@ -99,9 +55,8 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
       onSave(); 
       onClose(); 
     } catch (err) {
-      // CORREÇÃO DO `any`: Tipamos o erro corretamente
       const axiosError = err as AxiosError<{ detail: string }>;
-      setError(axiosError.response?.data?.detail || "Ocorreu um erro. Tente novamente.");
+      setError(axiosError.response?.data?.detail || "Ocorreu um erro.");
     }
   };
 
@@ -122,7 +77,7 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full px-3 py-2 border rounded text-gray-800" />
           </div>
           <div>
-            {/* CORREÇÃO DAS ASPAS: Usamos a entidade HTML " */}
+            {/* <<<< CORREÇÃO DAS ASPAS AQUI >>>> */}
             <label className="block text-gray-700">Número de WhatsApp (Ex: "+5511999998888")</label>
             <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+5511999998888" className="w-full px-3 py-2 border rounded text-gray-800" />
           </div>
@@ -132,7 +87,6 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
               <input type="password" value={password} onChange={e => setPassword(e.target.value)} required minLength={6} className="w-full px-3 py-2 border rounded text-gray-800" />
             </div>
           )}
-
           <div className="flex justify-end gap-4 pt-4">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancelar</button>
             <button type="submit" className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Salvar</button>
