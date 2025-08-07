@@ -78,7 +78,7 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
           </div>
           <div>
             {/* <<<< CORREÇÃO DAS ASPAS AQUI >>>> */}
-            <label className="block text-gray-700">Número de WhatsApp (Ex: "+5511999998888")</label>
+            <label className="block text-gray-700">Número de WhatsApp (Ex: '+5511999998888')</label>
             <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="+5511999998888" className="w-full px-3 py-2 border rounded text-gray-800" />
           </div>
           {!promotor && (
