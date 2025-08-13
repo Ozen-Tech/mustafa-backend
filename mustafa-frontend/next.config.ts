@@ -17,6 +17,11 @@ const nextConfig: NextConfig = {
         port: '8000',
         pathname: '/fotos-promotores/**', // Para desenvolvimento local
       },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+        pathname: '/**',
+      },
     ],
   },
 };

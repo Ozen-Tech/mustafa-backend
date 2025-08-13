@@ -27,7 +27,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/fotos-promotores", StaticFiles(directory="uploads/fotos_promotores"), name="fotos-promotores")
+# Removido mount de fotos-promotores pois agora usamos Cloudinary
+# app.mount("/fotos-promotores", StaticFiles(directory="uploads/fotos_promotores"), name="fotos-promotores")
 app.mount("/arquivos-contratos", StaticFiles(directory="uploads"), name="arquivos-contratos")
 
 # Incluindo todas as nossas rotas de forma limpa

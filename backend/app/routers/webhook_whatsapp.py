@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.db.connection import SessionLocal # Usaremos para criar sessões independentes para as tasks
 from app.crud import usuario as crud_usuario, foto_promotor as crud_foto
 from app.core.config import settings
+from app.services.cloudinary_service import cloudinary_service
 
 # Configura um logger para que você possa ver saídas detalhadas nos logs da Render
 logging.basicConfig(level=logging.INFO)
@@ -54,26 +55,32 @@ def process_foto_whatsapp(from_number: str, media_url: str, caption: str):
             content_type = response.headers.get('content-type', 'image/jpeg')
             logger.info(f"TASK INFO: Mídia baixada com sucesso. Tipo: {content_type}, Tamanho: {len(image_bytes)} bytes")
 
-        # 3. Preparar e salvar o arquivo no disco
+        # 3. Fazer upload para Cloudinary
         extensao = content_type.split('/')[-1] if '/' in content_type else 'jpg'
         if extensao.lower() not in ['jpg', 'jpeg', 'png']:
             extensao = 'jpg'  # Garante uma extensão padrão
         
         nome_arquivo_servidor = f"{uuid.uuid4()}.{extensao}"
-        caminho_completo = os.path.join(UPLOAD_DIRECTORY, nome_arquivo_servidor)
         
-        os.makedirs(UPLOAD_DIRECTORY, exist_ok=True) # Garante que o diretório exista
+        # Upload para Cloudinary
+        upload_result = cloudinary_service.upload_image(
+            image_bytes=image_bytes,
+            filename=nome_arquivo_servidor,
+            folder="fotos-promotores"
+        )
         
-        with open(caminho_completo, "wb") as buffer:
-            buffer.write(image_bytes)
-        logger.info(f"TASK INFO: Arquivo salvo no servidor em {caminho_completo}")
+        if not upload_result:
+            logger.error(f"TASK ERRO: Falha no upload para Cloudinary")
+            return
+        
+        logger.info(f"TASK INFO: Arquivo enviado para Cloudinary: {upload_result['public_id']}")
         
         # 4. Registrar a foto no banco de dados
-        url_acesso_foto = f"/fotos-promotores/{nome_arquivo_servidor}"
+        url_acesso_foto = upload_result['secure_url']  # URL do Cloudinary
         crud_foto.create_foto_registro(
             db=db,
             url_foto=url_acesso_foto,
-            nome_arquivo=nome_arquivo_servidor,
+            nome_arquivo=upload_result['public_id'],  # Armazenar public_id do Cloudinary
             legenda=caption,
             promotor_id=promotor.id,
             empresa_id=promotor.empresa_id

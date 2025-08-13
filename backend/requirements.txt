@@ -21,5 +21,6 @@ email-validator
 python-multipart
 httpx
 twilio
+cloudinary
 # Inteligência Artificial
 google-generativeai

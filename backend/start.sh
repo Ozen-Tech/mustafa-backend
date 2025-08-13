@@ -13,6 +13,11 @@ echo "==> Executando create_superuser.py..."
 python -m app.create_superuser
 echo "==> create_superuser.py concluído."
 
+# Criar diretórios necessários para uploads
+echo "==> Criando diretórios de upload..."
+mkdir -p uploads/fotos_promotores
+mkdir -p uploads
+echo "==> Diretórios de upload criados."
 
 # Iniciar o servidor Uvicorn como o processo principal
 echo "==> Iniciando o servidor Uvicorn..."
