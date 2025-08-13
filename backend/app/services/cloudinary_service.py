@@ -18,31 +18,38 @@ class CloudinaryService:
             secure=True
         )
     
-    def upload_image(self, image_bytes: bytes, filename: str, folder: str = "fotos-promotores") -> Optional[dict]:
+    def upload_image(self, image_source, filename: str = None, folder: str = "fotos-promotores") -> Optional[dict]:
         """
         Faz upload de uma imagem para o Cloudinary
         
         Args:
-            image_bytes: Bytes da imagem
-            filename: Nome do arquivo (será usado como public_id)
+            image_source: Bytes da imagem OU caminho do arquivo
+            filename: Nome do arquivo (será usado como public_id) - opcional se image_source for caminho
             folder: Pasta no Cloudinary onde salvar
             
         Returns:
             Dict com informações do upload ou None se falhar
         """
         try:
-            # Remove a extensão do filename para usar como public_id
-            public_id = os.path.splitext(filename)[0]
+            # Se filename não foi fornecido e image_source é um caminho, extrair o nome
+            if filename is None and isinstance(image_source, str):
+                filename = os.path.basename(image_source)
             
-            result = cloudinary.uploader.upload(
-                image_bytes,
-                public_id=public_id,
-                folder=folder,
-                resource_type="image",
-                format="jpg",  # Força conversão para JPG para padronizar
-                quality="auto",  # Otimização automática
-                fetch_format="auto"  # Formato automático baseado no browser
-            )
+            # Remove a extensão do filename para usar como public_id
+            public_id = os.path.splitext(filename)[0] if filename else None
+            
+            upload_params = {
+                "folder": folder,
+                "resource_type": "image",
+                "format": "jpg",  # Força conversão para JPG para padronizar
+                "quality": "auto",  # Otimização automática
+                "fetch_format": "auto"  # Formato automático baseado no browser
+            }
+            
+            if public_id:
+                upload_params["public_id"] = public_id
+            
+            result = cloudinary.uploader.upload(image_source, **upload_params)
             
             logger.info(f"Upload realizado com sucesso: {result['public_id']}")
             return result
