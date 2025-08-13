@@ -5,18 +5,24 @@ from cloudinary.utils import cloudinary_url
 import os
 from typing import Optional
 import logging
+from ..core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class CloudinaryService:
     def __init__(self):
-        # Configurar Cloudinary com variáveis de ambiente
-        cloudinary.config(
-            cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME"),
-            api_key=os.getenv("CLOUDINARY_API_KEY"),
-            api_secret=os.getenv("CLOUDINARY_API_SECRET"),
-            secure=True
-        )
+        # Configurar Cloudinary com configurações do settings
+        try:
+            cloudinary.config(
+                cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+                api_key=settings.CLOUDINARY_API_KEY,
+                api_secret=settings.CLOUDINARY_API_SECRET,
+                secure=True
+            )
+            logger.info(f"Cloudinary configurado com cloud_name: {settings.CLOUDINARY_CLOUD_NAME}")
+        except Exception as e:
+            logger.error(f"Erro ao configurar Cloudinary: {e}")
+            logger.warning("Cloudinary não configurado - fotos não serão enviadas para a nuvem")
     
     def upload_image(self, image_source, filename: str = None, folder: str = "fotos-promotores") -> Optional[dict]:
         """

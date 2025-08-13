@@ -99,7 +99,7 @@ export default function FotosPage() {
             <div key={foto.id} className="group bg-white rounded-lg shadow-md overflow-hidden relative">
               <div onClick={() => handleOpenModal(index)} className="cursor-pointer">
                 <div className="relative w-full h-48">
-                  <Image src={`${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} alt={foto.legenda || 'Foto'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
+                  <Image src={foto.url_foto.startsWith('http') ? foto.url_foto : `${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} alt={foto.legenda || 'Foto'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
                 </div>
                 <div className="p-4">
                   <p className="font-bold text-gray-800 truncate">{foto.nome_promotor}</p>
@@ -121,7 +121,7 @@ export default function FotosPage() {
         <ImageModal 
           isOpen={true}
           onClose={handleCloseModal}
-          imageUrl={`${process.env.NEXT_PUBLIC_API_URL}${fotos[modalIndex].url_foto}`}
+          imageUrl={fotos[modalIndex].url_foto.startsWith('http') ? fotos[modalIndex].url_foto : `${process.env.NEXT_PUBLIC_API_URL}${fotos[modalIndex].url_foto}`}
           altText={fotos[modalIndex].legenda || 'Foto'}
           onNext={handleNext}
           onPrev={handlePrev}

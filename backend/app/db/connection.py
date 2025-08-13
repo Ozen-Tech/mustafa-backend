@@ -30,15 +30,11 @@ def close_connection_pool():
         print("Pool psycopg2 fechado.")
 
 # --- CONFIGURAÇÃO DO SQLALCHEMY (A parte que estamos depurando) ---
-# Lendo as variáveis de ambiente para o SQLAlchemy
-DB_USER_SA = os.getenv("DB_USER")
-DB_PASSWORD_SA = os.getenv("DB_PASSWORD")
-DB_NAME_SA = os.getenv("DB_NAME")
-DB_HOST_SA = "postgres"  # O nome do serviço no docker-compose
-DB_PORT_SA = "5432"
+# Importando as configurações do settings
+from ..core.config import settings
 
-# Montando a string de conexão que o SQLAlchemy entende
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+# Usando a DATABASE_URL do settings
+SQLALCHEMY_DATABASE_URL = settings.DATABASE_URL
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

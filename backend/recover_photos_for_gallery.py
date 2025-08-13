@@ -21,9 +21,9 @@ from urllib.parse import urljoin
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
 from sqlalchemy.orm import Session
-from db.connection import get_db
-from db.models import FotoPromotor
-from services.cloudinary_service import CloudinaryService
+from app.db.connection import get_db
+from app.db.models import FotoPromotor
+from app.services.cloudinary_service import CloudinaryService
 
 class GalleryPhotoRecovery:
     def __init__(self):
