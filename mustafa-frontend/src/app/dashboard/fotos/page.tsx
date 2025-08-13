@@ -67,7 +67,7 @@ export default function FotosPage() {
         await api.delete(`/fotos/${fotoId}`);
         setFotos(prevFotos => prevFotos.filter(f => f.id !== fotoId));
         if (modalIndex !== null) handleCloseModal();
-      } catch (err) {
+      } catch {
         alert("Erro ao excluir a foto. Verifique suas permissões.");
       }
     }

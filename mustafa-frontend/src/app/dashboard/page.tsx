@@ -1,7 +1,6 @@
 
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext"; 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
@@ -27,7 +26,6 @@ const KpiCard = ({ title, value, loading }: { title: string; value: number | str
 );
 
 export default function DashboardHomePage() {
-  const { user } = useAuth();
   const [kpis, setKpis] = useState<KpiData | null>(null);
   const [loading, setLoading] = useState(true);
 
