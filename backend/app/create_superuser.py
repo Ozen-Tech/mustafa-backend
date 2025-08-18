@@ -77,3 +77,6 @@ def create_initial_superuser():
     finally:
         db.close()
         logger.info("Sessão do banco de dados para criação de superusuário fechada.")
+
+if __name__ == "__main__":
+    create_initial_superuser()

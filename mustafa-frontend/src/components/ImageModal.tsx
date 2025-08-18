@@ -1,5 +1,5 @@
 "use client";
-import Image from 'next/image'; // <<<< Importe o Image
+import Image from 'next/image';
 
 interface ImageModalProps {
   isOpen: boolean;
@@ -21,9 +21,14 @@ export const ImageModal = ({ isOpen, onClose, imageUrl, altText, onNext, onPrev,
       {onPrev && <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 text-white text-4xl p-2 bg-black bg-opacity-30 rounded-full">‹</button>}
       {onNext && <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="absolute right-4 top-1/2 -translate-y-1/2 text-white text-4xl p-2 bg-black bg-opacity-30 rounded-full">›</button>}
       
-      <div className="relative max-w-4xl max-h-[90vh] w-full" onClick={(e) => e.stopPropagation()}>
-        {/* <<<< CORREÇÃO DO <img> AQUI >>>> */}
-        <Image src={imageUrl} alt={altText} layout="fill" objectFit="contain" />
+      <div className="relative max-w-4xl max-h-[90vh] w-full h-full" onClick={(e) => e.stopPropagation()}>
+        <Image 
+          src={imageUrl} 
+          alt={altText} 
+          fill
+          style={{ objectFit: 'contain' }}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
 
         {promotorNome && (
             <div className="absolute bottom-0 left-0 w-full bg-black bg-opacity-50 text-white p-4">
