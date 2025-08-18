@@ -6,7 +6,7 @@ from sqlalchemy import func, distinct, extract
 from ..db import models
 from datetime import date, datetime
 from typing import Optional
-from ..services.cloudinary_service import cloudinary_service
+# Cloudinary service removido - usando apenas URLs do Twilio
 
 # (sua função create_foto_registro existente permanece igual)
 def create_foto_registro(db: Session, url_foto: str, nome_arquivo: str, legenda: str, promotor_id: int, empresa_id: int) -> models.FotoPromotor:
@@ -98,14 +98,11 @@ def get_foto_by_id(db: Session, foto_id: int) -> Optional[models.FotoPromotor]:
 
 # <<<<<<< NOVA FUNÇÃO ADICIONADA AQUI >>>>>>>>>
 def delete_foto(db: Session, foto: models.FotoPromotor) -> None:
-    """Exclui uma foto do banco de dados e do Cloudinary."""
-    # Deletar do Cloudinary usando o public_id armazenado em nome_arquivo_servidor
-    try:
-        cloudinary_service.delete_image(foto.nome_arquivo_servidor)
-    except Exception as e:
-        # Logar o erro, mas continuar para deletar do DB de qualquer forma
-        print(f"Erro ao deletar imagem do Cloudinary {foto.nome_arquivo_servidor}: {e}")
-
+    """Exclui uma foto do banco de dados.
+    
+    Nota: As fotos ficam armazenadas no Twilio, então apenas removemos
+    o registro do banco de dados. As URLs do Twilio continuam válidas.
+    """
     # Exclui o registro do banco de dados
     db.delete(foto)
     db.commit()

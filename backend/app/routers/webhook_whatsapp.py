@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app.db.connection import SessionLocal # Usaremos para criar sessões independentes para as tasks
 from app.crud import usuario as crud_usuario, foto_promotor as crud_foto
 from app.core.config import settings
-from app.services.cloudinary_service import cloudinary_service
 
 # Configura um logger para que você possa ver saídas detalhadas nos logs da Render
 logging.basicConfig(level=logging.INFO)
@@ -29,6 +28,8 @@ def process_foto_whatsapp(from_number: str, media_url: str, caption: str):
     Esta função é executada de forma independente, após a resposta já ter sido
     enviada para a Twilio. Ela cria sua própria sessão de banco de dados para
     garantir que a operação seja segura e não interfira com outras requisições.
+    
+    Agora usa apenas URLs do Twilio, sem fazer upload para serviços externos.
     """
     logger.info(f"TASK INICIADA: Processando foto para o número {from_number}")
     db: Session = SessionLocal()  # Cria uma nova sessão de DB exclusiva para esta tarefa
@@ -42,54 +43,41 @@ def process_foto_whatsapp(from_number: str, media_url: str, caption: str):
 
         logger.info(f"TASK INFO: Promotor encontrado: {promotor.nome} (ID: {promotor.id})")
 
-        # 2. Baixar a imagem da Twilio de forma segura
+        # 2. Verificar se a URL da mídia do Twilio está acessível
         auth = (settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
         
-        # Usamos um cliente síncrono aqui, pois a tarefa já está em um thread/processo de fundo
+        # Fazemos uma verificação HEAD para confirmar que a mídia existe
         with httpx.Client(auth=auth, follow_redirects=True) as client:
-            logger.info(f"TASK INFO: Baixando mídia de {media_url}")
-            response = client.get(media_url)
+            logger.info(f"TASK INFO: Verificando mídia em {media_url}")
+            response = client.head(media_url)
             response.raise_for_status()  # Lança uma exceção se o status não for 2xx
             
-            image_bytes = response.content
             content_type = response.headers.get('content-type', 'image/jpeg')
-            logger.info(f"TASK INFO: Mídia baixada com sucesso. Tipo: {content_type}, Tamanho: {len(image_bytes)} bytes")
+            logger.info(f"TASK INFO: Mídia verificada com sucesso. Tipo: {content_type}")
 
-        # 3. Fazer upload para Cloudinary
+        # 3. Gerar um nome único para identificação
         extensao = content_type.split('/')[-1] if '/' in content_type else 'jpg'
         if extensao.lower() not in ['jpg', 'jpeg', 'png']:
             extensao = 'jpg'  # Garante uma extensão padrão
         
         nome_arquivo_servidor = f"{uuid.uuid4()}.{extensao}"
         
-        # Upload para Cloudinary
-        upload_result = cloudinary_service.upload_image(
-            image_bytes=image_bytes,
-            filename=nome_arquivo_servidor,
-            folder="fotos-promotores"
-        )
+        logger.info(f"TASK INFO: Usando URL direta do Twilio: {media_url}")
         
-        if not upload_result:
-            logger.error(f"TASK ERRO: Falha no upload para Cloudinary")
-            return
-        
-        logger.info(f"TASK INFO: Arquivo enviado para Cloudinary: {upload_result['public_id']}")
-        
-        # 4. Registrar a foto no banco de dados
-        url_acesso_foto = upload_result['secure_url']  # URL do Cloudinary
+        # 4. Registrar a foto no banco de dados usando a URL do Twilio
         crud_foto.create_foto_registro(
             db=db,
-            url_foto=url_acesso_foto,
-            nome_arquivo=upload_result['public_id'],  # Armazenar public_id do Cloudinary
+            url_foto=media_url,  # URL direta do Twilio
+            nome_arquivo=nome_arquivo_servidor,  # Nome único gerado
             legenda=caption,
             promotor_id=promotor.id,
             empresa_id=promotor.empresa_id
         )
 
-        logger.info(f"TASK SUCESSO: Foto de {promotor.nome} ({from_number}) foi registrada no banco de dados com sucesso.")
+        logger.info(f"TASK SUCESSO: Foto de {promotor.nome} ({from_number}) foi registrada no banco de dados com URL do Twilio.")
 
     except httpx.HTTPStatusError as e:
-        logger.error(f"TASK ERRO: Falha ao baixar mídia da Twilio. Status: {e.response.status_code}. Resposta: {e.response.text}")
+        logger.error(f"TASK ERRO: Falha ao verificar mídia da Twilio. Status: {e.response.status_code}. Resposta: {e.response.text}")
     except Exception as e:
         # Pega qualquer outro erro inesperado e o registra detalhadamente
         logger.error(f"TASK ERRO: Falha inesperada ao processar a foto. Erro: {e}", exc_info=True)

@@ -7,10 +7,10 @@ class Settings(BaseSettings):
     SUPERUSER_EMAIL: str
     SUPERUSER_PASSWORD: str
 
-    # Cloudinary Configuration
-    CLOUDINARY_CLOUD_NAME: str
-    CLOUDINARY_API_KEY: str
-    CLOUDINARY_API_SECRET: str
+    # Cloudinary Configuration removida - usando apenas Twilio
+    # CLOUDINARY_CLOUD_NAME: str
+    # CLOUDINARY_API_KEY: str
+    # CLOUDINARY_API_SECRET: str
 
     GOOGLE_API_KEY: str
     ALGORITHM: str = "HS256"
