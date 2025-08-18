@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status # Importar HTTPException e status
+from fastapi import APIRouter, Depends, HTTPException, status, Request # Importar HTTPException e status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date, timedelta
@@ -9,12 +9,14 @@ from app.crud import foto_promotor as crud_foto
 from app.schemas import foto_promotor as schemas_foto
 from app.dependencies import get_current_user
 from app.schemas.usuario import PerfilUsuario # Importar o Enum
+from app.utils.image_utils import convert_twilio_url_to_proxy, is_twilio_url
 
 router = APIRouter()
 
 # (sua rota GET existente permanece igual)
 @router.get("", response_model=List[schemas_foto.FotoPromotor])
 def read_fotos_empresa(
+    request: Request,
     db: Session = Depends(get_db), 
     current_user: models.Usuario = Depends(get_current_user),
     promotor_id: Optional[int] = None,
@@ -31,12 +33,24 @@ def read_fotos_empresa(
         busca=busca
     )
 
-    response = [
-        schemas_foto.FotoPromotor(
-            **foto.__dict__, 
-            nome_promotor=foto.promotor.nome
-        ) for foto in fotos_db
-    ]
+    # Construir URL base do backend
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    
+    response = []
+    for foto in fotos_db:
+        foto_dict = foto.__dict__.copy()
+        
+        # Converter URLs do Twilio para URLs do proxy
+        if is_twilio_url(foto.url_foto):
+            foto_dict['url_foto'] = convert_twilio_url_to_proxy(foto.url_foto, base_url)
+        
+        response.append(
+            schemas_foto.FotoPromotor(
+                **foto_dict, 
+                nome_promotor=foto.promotor.nome
+            )
+        )
+    
     return response
     
     # << ATUALIZADO >> Associar o nome do promotor a cada foto

@@ -9,18 +9,23 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https', 
         hostname: 'mustafa-backend-6ywg.onrender.com',
-        pathname: '/fotos-promotores/**', // Permite qualquer imagem dentro desta pasta
+        pathname: '/**', // Permite qualquer imagem do backend (incluindo proxy)
       },
       {
         protocol: 'http',
         hostname: 'localhost',
         port: '8000',
-        pathname: '/fotos-promotores/**', // Para desenvolvimento local
+        pathname: '/**', // Para desenvolvimento local (incluindo proxy)
       },
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'api.twilio.com',
+        pathname: '/**', // Permite URLs diretas do Twilio (caso necessário)
       },
     ],
   },

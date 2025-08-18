@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 # Nossos routers
-from app.routers import auth, empresas, insights, contratos as contratos_router, webhook_whatsapp, fotos
+from app.routers import auth, empresas, insights, contratos as contratos_router, webhook_whatsapp, fotos, proxy_images
 from fastapi.staticfiles import StaticFiles
 
 # Criação da instância principal do FastAPI
@@ -39,6 +39,7 @@ app.include_router(empresas.router, prefix="/empresas", tags=["Empresas"])
 app.include_router(fotos.router, prefix="/fotos", tags=["Fotos"]) # <-- prefixo /fotos para a rota ""
 app.include_router(contratos_router.router, prefix="/contratos", tags=["Contratos"]) # <-- prefixo /contratos para a rota ""
 app.include_router(insights.router, prefix="/insights", tags=["Insights"])
+app.include_router(proxy_images.router, prefix="/proxy", tags=["Proxy de Imagens"])
 
 # <<<< CORREÇÃO PRINCIPAL AQUI >>>>
 # Como o `webhook_whatsapp.py` JÁ TEM prefix="/webhook", nós NÃO o colocamos aqui.
