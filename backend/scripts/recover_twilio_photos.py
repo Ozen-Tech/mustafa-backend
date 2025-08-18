@@ -126,6 +126,60 @@ class TwilioPhotoRecovery:
             self.stats['errors'] += 1
             return False
     
+    def create_new_photo_record(self, media_sid: str, new_url: str, message) -> bool:
+        """Cria um novo registro de foto no banco de dados."""
+        try:
+            if self.dry_run:
+                print(f"[DRY RUN] Criaria novo registro: {media_sid} -> {new_url}")
+                return True
+            
+            # Extrair número do telefone da mensagem
+            phone_number = message.from_
+            if phone_number.startswith('+'):
+                phone_number = phone_number[1:]
+            
+            # Buscar ou criar usuário promotor baseado no telefone
+            promotor = self.db.execute(
+                text("SELECT id, empresa_id FROM usuarios WHERE whatsapp_number = :phone"),
+                {"phone": phone_number}
+            ).fetchone()
+            
+            if not promotor:
+                # Se não encontrar o promotor, usar um padrão ou pular
+                print(f"Promotor não encontrado para telefone {phone_number}, pulando...")
+                return False
+            
+            # Gerar nome único para o arquivo
+            filename = f"recovered_{media_sid}.jpg"
+            
+            # Inserir novo registro
+            result = self.db.execute(
+                text("""
+                    INSERT INTO fotos_promotores (url_foto, nome_arquivo_servidor, data_envio, promotor_id, empresa_id, legenda)
+                    VALUES (:url_foto, :nome_arquivo, :data_envio, :promotor_id, :empresa_id, :legenda)
+                """),
+                {
+                    "url_foto": new_url,
+                    "nome_arquivo": filename,
+                    "data_envio": message.date_sent,
+                    "promotor_id": promotor[0],
+                    "empresa_id": promotor[1],
+                    "legenda": f"Foto recuperada do Twilio - Media SID: {media_sid}"
+                }
+            )
+            self.db.commit()
+            
+            if result.rowcount > 0:
+                self.stats['database_updated'] += result.rowcount
+                return True
+            return False
+            
+        except Exception as e:
+            print(f"Erro ao criar novo registro: {str(e)}")
+            self.db.rollback()
+            self.stats['errors'] += 1
+            return False
+    
     def get_existing_twilio_urls(self) -> List[str]:
         """Recupera todas as URLs do Twilio existentes no banco de dados."""
         try:
@@ -192,13 +246,34 @@ class TwilioPhotoRecovery:
                 # Por enquanto, vamos usar uma URL local
                 new_url = f"/recovered_photos/{filename}"
                 
-                # Atualizar banco de dados se a URL original existir
-                existing_urls = self.get_existing_twilio_urls()
-                matching_urls = [url for url in existing_urls if media.sid in url]
+                # Verificar se já existe um registro com esta URL ou legenda contendo o media_sid
+                existing_record = self.db.execute(
+                    text("SELECT id FROM fotos_promotores WHERE legenda LIKE :media_sid_pattern OR url_foto = :new_url"),
+                    {"media_sid_pattern": f"%{media.sid}%", "new_url": new_url}
+                ).fetchone()
                 
-                for old_url in matching_urls:
-                    self.update_database_url(old_url, new_url)
-                    print(f"URL atualizada: {old_url} -> {new_url}")
+                if existing_record:
+                    # Atualizar registro existente
+                    self.db.execute(
+                        text("UPDATE fotos_promotores SET url_foto = :new_url WHERE id = :id"),
+                        {"new_url": new_url, "id": existing_record[0]}
+                    )
+                    self.db.commit()
+                    self.stats['database_updated'] += 1
+                    print(f"Registro existente atualizado: {media.sid} -> {new_url}")
+                else:
+                    # Tentar atualizar URLs antigas do Twilio
+                    existing_urls = self.get_existing_twilio_urls()
+                    matching_urls = [url for url in existing_urls if media.sid in url]
+                    
+                    if matching_urls:
+                        for old_url in matching_urls:
+                            self.update_database_url(old_url, new_url)
+                            print(f"URL atualizada: {old_url} -> {new_url}")
+                    else:
+                        # Criar novo registro
+                        if self.create_new_photo_record(media.sid, new_url, message):
+                            print(f"Novo registro criado: {media.sid} -> {new_url}")
             
         except Exception as e:
             print(f"Erro ao processar mídia {media.sid}: {str(e)}")

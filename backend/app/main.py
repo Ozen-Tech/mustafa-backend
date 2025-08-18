@@ -30,6 +30,8 @@ app.add_middleware(
 # Removido mount de fotos-promotores pois agora usamos Cloudinary
 # app.mount("/fotos-promotores", StaticFiles(directory="uploads/fotos_promotores"), name="fotos-promotores")
 app.mount("/arquivos-contratos", StaticFiles(directory="uploads"), name="arquivos-contratos")
+# Mount para servir fotos recuperadas do Twilio
+app.mount("/recovered_photos", StaticFiles(directory="recovered_photos"), name="recovered_photos")
 
 # Incluindo todas as nossas rotas de forma limpa
 # Note que no seu código, a rota de insights ainda não estava sendo incluída

@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   // Configuração para permitir imagens do seu backend.
   // Sem isso, o <Image> da Next.js bloquearia as URLs.
   images: {
+    // Desabilitar otimização para evitar conflitos com nosso proxy
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https', 
