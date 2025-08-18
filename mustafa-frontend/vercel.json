@@ -7,11 +7,7 @@
       "NEXT_PUBLIC_API_URL": "https://mustafa-backend-6ywg.onrender.com"
     }
   },
-  "functions": {
-    "app/**": {
-      "runtime": "nodejs18.x"
-    }
-  },
+
   "headers": [
     {
       "source": "/(.*)",
