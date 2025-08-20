@@ -5,6 +5,22 @@ import api from '@/lib/api';
 import Image from 'next/image';
 import { ImageModal } from '@/components/ImageModal';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  Camera, 
+  Search, 
+  Filter, 
+  Calendar, 
+  User, 
+  Download,
+  Eye,
+  Grid3X3,
+  List,
+  SortAsc,
+  SortDesc,
+  Trash2,
+  X
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 // Interfaces para os dados
 interface FotoPromotor {
@@ -12,31 +28,45 @@ interface FotoPromotor {
   url_foto: string;
   legenda: string | null;
   data_envio: string;
-  nome_promotor: string; // Adicionado pelo backend
+  nome_promotor: string;
 }
+
 interface Promotor {
   id: number;
   nome: string;
 }
 
+type ViewMode = 'grid' | 'list';
+type SortBy = 'date' | 'name';
+type SortOrder = 'asc' | 'desc';
+
 export default function FotosPage() {
   const { user } = useAuth();
   const [fotos, setFotos] = useState<FotoPromotor[]>([]);
+  const [filteredFotos, setFilteredFotos] = useState<FotoPromotor[]>([]);
   const [promotores, setPromotores] = useState<Promotor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filtros originais
   const [selectedPromotor, setSelectedPromotor] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [dataFim, setDataFim] = useState('');
   const [buscaLegenda, setBuscaLegenda] = useState('');
 
+  // Novos controles de UI
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [sortBy, setSortBy] = useState<SortBy>('date');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [filterBy, setFilterBy] = useState<'all' | 'today' | 'week' | 'month'>('all');
+
   const [modalIndex, setModalIndex] = useState<number | null>(null);
 
   const handleOpenModal = (index: number) => setModalIndex(index);
   const handleCloseModal = () => setModalIndex(null);
-  const handleNext = () => setModalIndex((prev) => (prev! + 1) % fotos.length);
-  const handlePrev = () => setModalIndex((prev) => (prev! - 1 + fotos.length) % fotos.length);
+  const handleNext = () => setModalIndex((prev) => (prev! + 1) % filteredFotos.length);
+  const handlePrev = () => setModalIndex((prev) => (prev! - 1 + filteredFotos.length) % filteredFotos.length);
 
   const fetchFotos = useCallback(() => {
     setLoading(true);
@@ -48,8 +78,11 @@ export default function FotosPage() {
     if (buscaLegenda) params.append('busca', buscaLegenda);
     
     api.get<FotoPromotor[]>('/fotos', { params })
-      .then(response => setFotos(response.data))
-      .catch((err) => { // <<<< Usando a variável 'err'
+      .then(response => {
+        setFotos(response.data);
+        setFilteredFotos(response.data);
+      })
+      .catch((err) => {
         console.error("Falha ao buscar fotos:", err); 
         setError("Não foi possível carregar as fotos.");
       })
@@ -60,6 +93,40 @@ export default function FotosPage() {
     api.get('/users').then(response => setPromotores(response.data)).catch(() => {});
     fetchFotos();
   }, [fetchFotos]);
+
+  // Aplicar filtros e ordenação locais
+  useEffect(() => {
+    let filtered = fotos.filter(foto => 
+      foto.nome_promotor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (foto.legenda && foto.legenda.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+
+    // Aplicar filtro de data
+    const now = new Date();
+    if (filterBy === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      filtered = filtered.filter(foto => new Date(foto.data_envio) >= today);
+    } else if (filterBy === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(foto => new Date(foto.data_envio) >= weekAgo);
+    } else if (filterBy === 'month') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      filtered = filtered.filter(foto => new Date(foto.data_envio) >= monthAgo);
+    }
+
+    // Aplicar ordenação
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      if (sortBy === 'date') {
+        comparison = new Date(a.data_envio).getTime() - new Date(b.data_envio).getTime();
+      } else if (sortBy === 'name') {
+        comparison = a.nome_promotor.localeCompare(b.nome_promotor);
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    setFilteredFotos(filtered);
+  }, [searchTerm, filterBy, sortBy, sortOrder, fotos]);
   
   const handleDeleteFoto = async (fotoId: number) => {
     if (confirm("Tem certeza que deseja excluir esta foto? A ação não pode ser desfeita.")) {
@@ -77,58 +144,397 @@ export default function FotosPage() {
     e.preventDefault();
     fetchFotos();
   };
-  
-  return (
-    <>
-      <div>
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Galeria de Fotos</h1>
-        <form onSubmit={handleFilterSubmit} className="bg-white p-4 rounded-lg shadow-md mb-6 flex flex-wrap gap-4 items-end">
-            <div className="flex-1 min-w-[150px]"><label className="block text-sm font-medium text-gray-700">Promotor</label><select value={selectedPromotor} onChange={e => setSelectedPromotor(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800"><option value="">Todos</option>{promotores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></div>
-            <div className="flex-1 min-w-[150px]"><label className="block text-sm font-medium text-gray-700">Data Início</label><input type="date" value={dataInicio} onChange={e => setDataInicio(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800" /></div>
-            <div className="flex-1 min-w-[150px]"><label className="block text-sm font-medium text-gray-700">Data Fim</label><input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800" /></div>
-            <div className="flex-2 min-w-[200px]"><label className="block text-sm font-medium text-gray-700">Buscar na Legenda</label><input type="text" value={buscaLegenda} onChange={e => setBuscaLegenda(e.target.value)} placeholder="Nome da loja..." className="mt-1 block w-full p-2 border border-gray-300 rounded-md text-gray-800" /></div>
-            <button type="submit" className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">Filtrar</button>
-        </form>
 
-        {loading && <p className="text-center p-10">Carregando...</p>}
-        {!loading && !error && fotos.length === 0 && <p className="text-center bg-white p-6 rounded shadow">Nenhuma foto encontrada.</p>}
-        {error && <p className="text-red-500 text-center">{error}</p>}
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {fotos.map((foto, index) => (
-            <div key={foto.id} className="group bg-white rounded-lg shadow-md overflow-hidden relative">
-              <div onClick={() => handleOpenModal(index)} className="cursor-pointer">
-                <div className="relative w-full h-48">
-                  <Image src={foto.url_foto.startsWith('http') ? foto.url_foto : `${process.env.NEXT_PUBLIC_API_URL}${foto.url_foto}`} alt={foto.legenda || 'Foto'} fill className="object-cover transition-transform duration-300 group-hover:scale-110"/>
-                </div>
-                <div className="p-4">
-                  <p className="font-bold text-gray-800 truncate">{foto.nome_promotor}</p>
-                  <p className="text-sm text-gray-600 truncate">{foto.legenda || 'Sem legenda'}</p>
-                  <p className="text-xs text-gray-400 mt-2">{new Date(foto.data_envio).toLocaleDateString('pt-BR')}</p>
-                </div>
-              </div>
-              {user?.perfil === 'ADMIN' && (
-                <button onClick={() => handleDeleteFoto(foto.id)} className="absolute top-2 right-2 bg-red-600 text-white rounded-full h-8 w-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Excluir foto">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-              )}
-            </div>
-          ))}
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Hoje';
+    if (diffDays === 2) return 'Ontem';
+    if (diffDays <= 7) return `${diffDays} dias atrás`;
+    
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  };
+
+  const getImageUrl = (url: string) => {
+    return url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_API_URL}${url}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="loading-shimmer w-12 h-12 rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Carregando galeria...</p>
         </div>
       </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center py-8">{error}</div>;
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl">
+            <Camera className="text-white" size={24} />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Galeria de Fotos
+            </h1>
+            <p className="text-gray-600 mt-1">Visualize todas as fotos enviadas pelos promotores</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+            className={`p-3 rounded-xl transition-all duration-200 ${
+              viewMode === 'grid' 
+                ? 'bg-purple-100 text-purple-700' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            title={viewMode === 'grid' ? 'Visualização em lista' : 'Visualização em grade'}
+          >
+            {viewMode === 'grid' ? <List size={20} /> : <Grid3X3 size={20} />}
+          </motion.button>
+        </div>
+      </div>
+
+      {/* Advanced Filters */}
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-lg">
+        <form onSubmit={handleFilterSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Promotor</label>
+              <select 
+                value={selectedPromotor} 
+                onChange={e => setSelectedPromotor(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="">Todos os promotores</option>
+                {promotores.map(p => (
+                  <option key={p.id} value={p.id}>{p.nome}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Data Início</label>
+              <input 
+                type="date" 
+                value={dataInicio} 
+                onChange={e => setDataInicio(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Data Fim</label>
+              <input 
+                type="date" 
+                value={dataFim} 
+                onChange={e => setDataFim(e.target.value)}
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Buscar na Legenda</label>
+              <input 
+                type="text" 
+                value={buscaLegenda} 
+                onChange={e => setBuscaLegenda(e.target.value)}
+                placeholder="Nome da loja..."
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              />
+            </div>
+          </div>
+          
+          <div className="flex justify-end">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg font-medium"
+            >
+              Aplicar Filtros
+            </motion.button>
+          </div>
+        </form>
+      </div>
+
+      {/* Quick Search and Filters */}
+      <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-lg">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <input
+              type="text"
+              placeholder="Busca rápida por promotor ou legenda..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+            />
+          </div>
+          
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <Filter size={20} className="text-gray-400" />
+              <select
+                value={filterBy}
+                onChange={(e) => setFilterBy(e.target.value as 'all' | 'today' | 'week' | 'month')}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="all">Todos os períodos</option>
+                <option value="today">Hoje</option>
+                <option value="week">Última semana</option>
+                <option value="month">Último mês</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortBy)}
+                className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+              >
+                <option value="date">Data</option>
+                <option value="name">Nome</option>
+              </select>
+              
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+                className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-200"
+                title={sortOrder === 'asc' ? 'Ordem crescente' : 'Ordem decrescente'}
+              >
+                {sortOrder === 'asc' ? <SortAsc size={20} /> : <SortDesc size={20} />}
+              </motion.button>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-gray-600">
+              <span className="font-medium">{filteredFotos.length} fotos</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Photos Grid/List */}
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          {filteredFotos.map((foto, index) => (
+            <motion.div
+              key={foto.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className="bg-white/80 backdrop-blur-sm rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 group relative"
+            >
+              <div className="aspect-square relative overflow-hidden">
+                <Image
+                  src={getImageUrl(foto.url_foto)}
+                  alt={foto.legenda || 'Foto'}
+                  fill
+                  className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
+                  onClick={() => handleOpenModal(index)}
+                />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    whileHover={{ opacity: 1, scale: 1 }}
+                    className="opacity-0 group-hover:opacity-100 transition-all duration-300"
+                  >
+                    <Eye className="text-white" size={32} />
+                  </motion.div>
+                </div>
+                
+                {user?.perfil === 'ADMIN' && (
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleDeleteFoto(foto.id)}
+                    className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full h-8 w-8 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                    title="Excluir foto"
+                  >
+                    <Trash2 size={16} />
+                  </motion.button>
+                )}
+              </div>
+              
+              <div className="p-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <User size={16} className="text-gray-400" />
+                  <h3 className="font-semibold text-gray-900 truncate">{foto.nome_promotor}</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">{foto.legenda || 'Sem legenda'}</p>
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <Calendar size={12} />
+                  <span>{formatDate(foto.data_envio)}</span>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      ) : (
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl border border-gray-200/50 shadow-lg overflow-hidden">
+          <div className="divide-y divide-gray-200/50">
+            {filteredFotos.map((foto, index) => (
+              <motion.div
+                key={foto.id}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="p-6 hover:bg-gray-50/50 transition-all duration-200 group relative"
+              >
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 relative">
+                    <Image
+                      src={getImageUrl(foto.url_foto)}
+                      alt={foto.legenda || 'Foto'}
+                      fill
+                      className="object-cover cursor-pointer transition-transform duration-300 group-hover:scale-110"
+                      onClick={() => handleOpenModal(index)}
+                    />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <User size={16} className="text-gray-400" />
+                      <h3 className="font-semibold text-gray-900">{foto.nome_promotor}</h3>
+                    </div>
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">{foto.legenda || 'Sem legenda'}</p>
+                    <div className="flex items-center space-x-2 text-xs text-gray-500">
+                      <Calendar size={12} />
+                      <span>{formatDate(foto.data_envio)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => handleOpenModal(index)}
+                      className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-xl transition-all duration-200"
+                      title="Visualizar"
+                    >
+                      <Eye size={16} />
+                    </motion.button>
+                    
+                    <motion.a
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      href={getImageUrl(foto.url_foto)}
+                      download
+                      className="p-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all duration-200"
+                      title="Download"
+                    >
+                      <Download size={16} />
+                    </motion.a>
+                    
+                    {user?.perfil === 'ADMIN' && (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => handleDeleteFoto(foto.id)}
+                        className="p-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-xl transition-all duration-200"
+                        title="Excluir"
+                      >
+                        <Trash2 size={16} />
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Empty State */}
+      {filteredFotos.length === 0 && !loading && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <Camera size={48} className="text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">
+            {searchTerm || filterBy !== 'all' ? 'Nenhuma foto encontrada' : 'Nenhuma foto enviada ainda'}
+          </h3>
+          <p className="text-gray-500">
+            {searchTerm || filterBy !== 'all'
+              ? 'Tente ajustar os filtros de busca' 
+              : 'As fotos enviadas pelos promotores aparecerão aqui'
+            }
+          </p>
+        </motion.div>
+      )}
+
+      {/* Stats Summary */}
+      {fotos.length > 0 && (
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-200/50">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">{fotos.length}</div>
+              <div className="text-sm text-gray-600">Total de Fotos</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {fotos.filter(f => {
+                  const today = new Date();
+                  const fotoDate = new Date(f.data_envio);
+                  return fotoDate.toDateString() === today.toDateString();
+                }).length}
+              </div>
+              <div className="text-sm text-gray-600">Hoje</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {fotos.filter(f => {
+                  const weekAgo = new Date();
+                  weekAgo.setDate(weekAgo.getDate() - 7);
+                  return new Date(f.data_envio) >= weekAgo;
+                }).length}
+              </div>
+              <div className="text-sm text-gray-600">Esta Semana</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {new Set(fotos.map(f => f.nome_promotor)).size}
+              </div>
+              <div className="text-sm text-gray-600">Promotores Ativos</div>
+            </div>
+          </div>
+        </div>
+      )}
       
       {modalIndex !== null && (
         <ImageModal 
           isOpen={true}
           onClose={handleCloseModal}
-          imageUrl={fotos[modalIndex].url_foto.startsWith('http') ? fotos[modalIndex].url_foto : `${process.env.NEXT_PUBLIC_API_URL}${fotos[modalIndex].url_foto}`}
-          altText={fotos[modalIndex].legenda || 'Foto'}
+          imageUrl={getImageUrl(filteredFotos[modalIndex].url_foto)}
+          altText={filteredFotos[modalIndex].legenda || 'Foto'}
           onNext={handleNext}
           onPrev={handlePrev}
-          promotorNome={fotos[modalIndex].nome_promotor}
-          dataEnvio={fotos[modalIndex].data_envio}
+          promotorNome={filteredFotos[modalIndex].nome_promotor}
+          dataEnvio={filteredFotos[modalIndex].data_envio}
         />
       )}
-    </>
+    </div>
   );
 }
