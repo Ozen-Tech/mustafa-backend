@@ -257,7 +257,7 @@ export const PromotorFormModal = ({ isOpen, onClose, onSave, promotor }: Promoto
             {/* WhatsApp */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Número de WhatsApp (Ex: '+5511999998888')
+                Número de WhatsApp (Ex: &quot;+5511999998888&quot;)
               </label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />

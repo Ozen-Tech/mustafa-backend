@@ -12,11 +12,12 @@ import {
   Eye, 
   Mail, 
   Phone,
-  Calendar,
   Search,
-  Filter
+  Filter,
+  Images
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 // Interfaces dos dados
 interface ContratoInfo {
@@ -35,15 +36,14 @@ interface User {
 }
 
 export default function PromotoresPage() {
+  const router = useRouter();
   const [promotores, setPromotores] = useState<User[]>([]);
   const [filteredPromotores, setFilteredPromotores] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingPromotor, setEditingPromotor] = useState<User | null>(null);
-  
   const [isContractModalOpen, setIsContractModalOpen] = useState(false);
   const [contractImageUrl, setContractImageUrl] = useState('');
 
@@ -82,6 +82,10 @@ export default function PromotoresPage() {
 
   const handleOpenContractModal = (url: string) => { setContractImageUrl(url); setIsContractModalOpen(true); };
   const handleCloseContractModal = () => setIsContractModalOpen(false);
+  
+  const handleViewPhotos = (promotorId: number, promotorName: string) => {
+    router.push(`/dashboard/fotos?promotor_id=${promotorId}&promotor_name=${encodeURIComponent(promotorName)}`);
+  };
 
   if (loading) {
     return (
@@ -173,14 +177,27 @@ export default function PromotoresPage() {
                 </div>
               </div>
               
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => handleOpenEditModal(promotor)}
-                className="p-2 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-600 rounded-lg transition-all duration-200"
-              >
-                <Edit3 size={16} />
-              </motion.button>
+              <div className="flex items-center space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleViewPhotos(promotor.id, promotor.nome)}
+                  className="p-2 bg-green-100 hover:bg-green-200 text-green-600 hover:text-green-700 rounded-lg transition-all duration-200"
+                  title="Ver fotos do promotor"
+                >
+                  <Images size={16} />
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleOpenEditModal(promotor)}
+                  className="p-2 bg-gray-100 hover:bg-blue-100 text-gray-600 hover:text-blue-600 rounded-lg transition-all duration-200"
+                  title="Editar promotor"
+                >
+                  <Edit3 size={16} />
+                </motion.button>
+              </div>
             </div>
             
             {/* Informações de Contato */}
