@@ -36,8 +36,7 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   const navigationItems = [
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { href: '/dashboard/fotos', label: 'Galeria de Fotos', icon: Camera },
-    { href: '/dashboard/promotores', label: 'Usuários', icon: Users },
-    { href: '/dashboard/contratos', label: 'Contratos', icon: FileText },
+    { href: '/dashboard/promotores', label: 'Promotores', icon: Users },
     { href: '/dashboard/insights', label: 'Assistente IA', icon: Brain },
   ];
 
