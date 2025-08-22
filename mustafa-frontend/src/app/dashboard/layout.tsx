@@ -8,7 +8,6 @@ import {
   Camera, 
   Users, 
   Brain, 
-  FileText, 
   MessageCircle, 
   LogOut,
   User,

@@ -8,39 +8,11 @@ interface PaginationConfig {
   cacheTime?: number; // tempo em ms para manter cache
 }
 
-// Interface para dados paginados
-interface PaginatedData<T> {
-  data: T[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
 
-interface PaginationState {
-  currentPage: number;
-  totalPages: number;
-  totalItems: number;
-  pageSize: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
 
-interface PaginatedDataActions {
-  setPage: (page: number) => void;
-  setPageSize: (size: number) => void;
-  refresh: () => void;
-}
 
-interface PaginatedDataResult<T> {
-  data: T[];
-  pagination: PaginationState;
-  loading: boolean;
-  error: string | null;
-  actions: PaginatedDataActions;
-}
+
+
 
 // Interface para estado do hook
 interface UsePaginatedDataState<T> {
@@ -59,6 +31,7 @@ interface UsePaginatedDataState<T> {
 
 // Cache global para dados
 const dataCache = new Map<string, {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: UsePaginatedDataState<any>;
   timestamp: number;
   expiry: number;
@@ -68,7 +41,7 @@ const dataCache = new Map<string, {
 export function usePaginatedData<T>(
   endpoint: string,
   config: PaginationConfig = {},
-  dependencies: any[] = []
+  dependencies: unknown[] = []
 ) {
   const {
     initialPage = 1,
@@ -230,6 +203,7 @@ export function usePaginatedData<T>(
   // Carregar dados iniciais
   useEffect(() => {
     fetchData(initialPage, pageSize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fetchData, initialPage, pageSize, ...dependencies]);
 
   // Limpeza automática do cache expirado
