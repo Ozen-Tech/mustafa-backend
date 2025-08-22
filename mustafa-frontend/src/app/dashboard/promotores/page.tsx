@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import { useState } from 'react';
 import { PromotorFormModal } from '@/components/PromotorFormModal';
-import { ImageModal } from '@/components/ImageModal';
+import { ContractUploadModal } from '@/components/ContractUploadModal';
+import Pagination, { PageSizeSelector, PaginationInfo } from '@/components/Pagination';
+import { useSearchablePaginatedData } from '@/lib/hooks';
 import { 
   Users, 
   Plus, 
@@ -14,7 +15,9 @@ import {
   Phone,
   Search,
   Filter,
-  Images
+  Images,
+  RefreshCw,
+  Upload
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
@@ -37,51 +40,50 @@ interface User {
 
 export default function PromotoresPage() {
   const router = useRouter();
-  const [promotores, setPromotores] = useState<User[]>([]);
-  const [filteredPromotores, setFilteredPromotores] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Usar o hook de paginação com busca
+  const {
+    data: promotores,
+    loading,
+    error,
+    pagination,
+    searchTerm,
+    setSearchTerm,
+    actions
+  } = useSearchablePaginatedData<User>('/users', {
+    pageSize: 12,
+    cacheTime: 3 * 60 * 1000 // 3 minutos de cache
+  });
+
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [editingPromotor, setEditingPromotor] = useState<User | null>(null);
-  const [isContractModalOpen, setIsContractModalOpen] = useState(false);
-  const [contractImageUrl, setContractImageUrl] = useState('');
-
-  const fetchPromotores = () => {
-    setLoading(true);
-    setError(null);
-    api.get<User[]>('/users')
-      .then(response => {
-        setPromotores(response.data);
-        setFilteredPromotores(response.data);
-      })
-      .catch(() => setError("Falha ao carregar promotores."))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchPromotores();
-  }, []);
-
-  useEffect(() => {
-    const filtered = promotores.filter(promotor => 
-      promotor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promotor.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (promotor.whatsapp_number && promotor.whatsapp_number.includes(searchTerm))
-    );
-    setFilteredPromotores(filtered);
-  }, [searchTerm, promotores]);
+  const [isContractUploadModalOpen, setIsContractUploadModalOpen] = useState(false);
+  const [selectedPromotorForContract, setSelectedPromotorForContract] = useState<User | null>(null);
 
   const handleOpenCreateModal = () => { setEditingPromotor(null); setIsFormModalOpen(true); };
   const handleOpenEditModal = (promotor: User) => { setEditingPromotor(promotor); setIsFormModalOpen(true); };
   const handleCloseFormModal = () => setIsFormModalOpen(false);
   const handleSave = () => {
     setIsFormModalOpen(false);
-    fetchPromotores();
+    actions.refresh(); // Usar refresh do hook
   };
 
-  const handleOpenContractModal = (url: string) => { setContractImageUrl(url); setIsContractModalOpen(true); };
-  const handleCloseContractModal = () => setIsContractModalOpen(false);
+
+  
+  const handleOpenContractUploadModal = (promotor: User) => {
+    setSelectedPromotorForContract(promotor);
+    setIsContractUploadModalOpen(true);
+  };
+
+  const handleCloseContractUploadModal = () => {
+    setIsContractUploadModalOpen(false);
+    setSelectedPromotorForContract(null);
+  };
+
+  const handleContractUploaded = () => {
+    actions.refresh();
+    handleCloseContractUploadModal();
+  };
   
   const handleViewPhotos = (promotorId: number, promotorName: string) => {
     router.push(`/dashboard/fotos?promotor_id=${promotorId}&promotor_name=${encodeURIComponent(promotorName)}`);
@@ -140,16 +142,28 @@ export default function PromotoresPage() {
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
             />
           </div>
-          <div className="flex items-center space-x-2 text-gray-600">
-            <Filter size={20} />
-            <span className="font-medium">{filteredPromotores.length} promotores encontrados</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-gray-600">
+              <Filter size={20} />
+              <span className="font-medium">{promotores.length} promotores encontrados</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={actions.refresh}
+              disabled={loading}
+              className="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span>Atualizar</span>
+            </motion.button>
           </div>
         </div>
       </div>
 
       {/* Promotores Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPromotores.map((promotor, index) => (
+        {promotores.map((promotor: User, index: number) => (
           <motion.div
             key={promotor.id}
             initial={{ opacity: 0, y: 20 }}
@@ -186,6 +200,16 @@ export default function PromotoresPage() {
                   title="Ver fotos do promotor"
                 >
                   <Images size={16} />
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleOpenContractUploadModal(promotor)}
+                  className="p-2 bg-orange-100 hover:bg-orange-200 text-orange-600 hover:text-orange-700 rounded-lg transition-all duration-200"
+                  title="Enviar contrato"
+                >
+                  <Upload size={16} />
                 </motion.button>
                 
                 <motion.button
@@ -229,9 +253,7 @@ export default function PromotoresPage() {
                   </h4>
                 </div>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {promotor.contratos.map((contrato) => {
-                    const imageUrl = `${process.env.NEXT_PUBLIC_API_URL}${contrato.url_acesso}`;
-                    return (
+                  {promotor.contratos.map((contrato: ContratoInfo) => (
                       <div key={contrato.id} className="flex items-center justify-between p-3 bg-gray-50/80 rounded-lg hover:bg-gray-100/80 transition-colors">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-gray-700 truncate font-medium">
@@ -241,14 +263,14 @@ export default function PromotoresPage() {
                         <motion.button
                           whileHover={{ scale: 1.1 }}
                           whileTap={{ scale: 0.9 }}
-                          onClick={() => handleOpenContractModal(imageUrl)}
+                          onClick={() => router.push(`/dashboard/contrato/${contrato.id}`)}
                           className="p-2 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg transition-colors ml-2"
+                          title="Ver contrato em tela cheia"
                         >
                           <Eye size={14} />
                         </motion.button>
                       </div>
-                    );
-                  })}
+                  ))}
                 </div>
               </div>
             )}
@@ -267,7 +289,7 @@ export default function PromotoresPage() {
       </div>
 
       {/* Empty State */}
-      {filteredPromotores.length === 0 && !loading && (
+      {promotores.length === 0 && !loading && (
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -296,9 +318,47 @@ export default function PromotoresPage() {
         </motion.div>
       )}
 
+      {/* Paginação */}
+      {pagination.totalPages > 1 && (
+        <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl border border-gray-200/50 shadow-lg">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <PaginationInfo
+              currentPage={pagination.page}
+              pageSize={pagination.pageSize}
+              total={pagination.total}
+            />
+            
+            <div className="flex items-center space-x-4">
+              <PageSizeSelector
+                pageSize={pagination.pageSize}
+                onPageSizeChange={actions.changePageSize}
+                options={[6, 12, 24, 48]}
+              />
+              
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={actions.goToPage}
+                hasNext={pagination.hasNext}
+                hasPrev={pagination.hasPrev}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       <PromotorFormModal isOpen={isFormModalOpen} onClose={handleCloseFormModal} onSave={handleSave} promotor={editingPromotor} />
       
-      <ImageModal isOpen={isContractModalOpen} onClose={handleCloseContractModal} imageUrl={contractImageUrl} altText="Visualização de Contrato"/>
+
+      
+      <ContractUploadModal 
+        isOpen={isContractUploadModalOpen} 
+        onClose={handleCloseContractUploadModal} 
+        onSuccess={handleContractUploaded}
+        promotorId={selectedPromotorForContract?.id}
+        promotorNome={selectedPromotorForContract?.nome}
+        promotorCpf={selectedPromotorForContract?.email}
+      />
     </div>
   );
 }

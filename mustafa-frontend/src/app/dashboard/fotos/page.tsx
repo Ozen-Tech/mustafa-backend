@@ -20,7 +20,8 @@ import {
   SortDesc,
   Trash2,
   Package,
-  ArrowLeft
+  ArrowLeft,
+  RefreshCw
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -149,7 +150,7 @@ export default function FotosPage() {
     if (confirm("Tem certeza que deseja excluir esta foto? A ação não pode ser desfeita.")) {
       try {
         await api.delete(`/fotos/${fotoId}`);
-        setFotos(prevFotos => prevFotos.filter(f => f.id !== fotoId));
+        fetchFotos(); // Recarregar a lista após exclusão
         if (modalIndex !== null) handleCloseModal();
       } catch {
         alert("Erro ao excluir a foto. Verifique suas permissões.");
@@ -377,7 +378,18 @@ export default function FotosPage() {
             </div>
           </div>
           
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-3">
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="button"
+              onClick={() => fetchFotos()}
+              disabled={loading}
+              className="px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all duration-200 font-medium flex items-center space-x-2"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <span>Atualizar</span>
+            </motion.button>
             <motion.button 
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -440,8 +452,10 @@ export default function FotosPage() {
               </motion.button>
             </div>
             
-            <div className="flex items-center space-x-2 text-gray-600">
-              <span className="font-medium">{filteredFotos.length} fotos</span>
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">
+                {filteredFotos.length} foto{filteredFotos.length !== 1 ? 's' : ''} encontrada{filteredFotos.length !== 1 ? 's' : ''}
+              </span>
             </div>
           </div>
         </div>
@@ -526,6 +540,8 @@ export default function FotosPage() {
           )}
         </motion.div>
       )}
+
+
 
       {/* Photos Grid/List */}
       {viewMode === 'grid' ? (
@@ -678,17 +694,19 @@ export default function FotosPage() {
         </motion.div>
       )}
 
+
+
       {/* Stats Summary */}
-      {fotos.length > 0 && (
+      {filteredFotos.length > 0 && (
         <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-2xl border border-purple-200/50">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">{fotos.length}</div>
+              <div className="text-2xl font-bold text-purple-600">{filteredFotos.length}</div>
               <div className="text-sm text-gray-600">Total de Fotos</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {fotos.filter(f => {
+                {filteredFotos.filter(f => {
                   const today = new Date();
                   const fotoDate = new Date(f.data_envio);
                   return fotoDate.toDateString() === today.toDateString();
@@ -698,7 +716,7 @@ export default function FotosPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {fotos.filter(f => {
+                {filteredFotos.filter(f => {
                   const weekAgo = new Date();
                   weekAgo.setDate(weekAgo.getDate() - 7);
                   return new Date(f.data_envio) >= weekAgo;
@@ -708,9 +726,9 @@ export default function FotosPage() {
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-purple-600">
-                {new Set(fotos.map(f => f.nome_promotor)).size}
+                {new Set(filteredFotos.map(f => f.nome_promotor)).size}
               </div>
-              <div className="text-sm text-gray-600">Promotores Ativos</div>
+              <div className="text-sm text-gray-600">Promotores</div>
             </div>
           </div>
         </div>

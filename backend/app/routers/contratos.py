@@ -56,6 +56,51 @@ def read_contratos(
 
     return response_list
 
+# =========================================================================
+# <<< ROTA PARA BUSCAR CONTRATO POR ID >>>
+# =========================================================================
+@router.get("/{contrato_id}", response_model=schemas_contrato.Contrato, summary="Busca um contrato específico por ID")
+def read_contrato(
+    contrato_id: int,
+    db: Session = Depends(get_db),
+    current_user: models.Usuario = Depends(get_current_user)
+):
+    """
+    Retorna um contrato específico pelo ID, garantindo que pertence à empresa
+    do usuário autenticado.
+    """
+    # Buscar o contrato no banco de dados
+    db_contrato = crud_contrato.get_contrato_by_id(db=db, contrato_id=contrato_id)
+    
+    if not db_contrato:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Contrato não encontrado"
+        )
+    
+    # Verificar se o contrato pertence à empresa do usuário
+    if db_contrato.empresa_id != current_user.empresa_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso negado ao contrato"
+        )
+    
+    # Construir a URL de acesso
+    url_acesso = f"/arquivos-contratos/{db_contrato.nome_arquivo_servidor}"
+    
+    # Retornar o contrato formatado
+    return schemas_contrato.Contrato(
+        id=db_contrato.id,
+        nome_promotor=db_contrato.nome_promotor,
+        cpf_promotor=db_contrato.cpf_promotor,
+        nome_arquivo_original=db_contrato.nome_arquivo_original,
+        caminho_arquivo=db_contrato.caminho_arquivo,
+        url_acesso=url_acesso,
+        data_upload=db_contrato.data_upload,
+        usuario_id=db_contrato.usuario_id,
+        empresa_id=db_contrato.empresa_id
+    )
+
 # =============================================================
 # Sua rota de upload existente (não altere)
 # =============================================================

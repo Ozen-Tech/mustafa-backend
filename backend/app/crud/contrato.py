@@ -53,3 +53,20 @@ def get_contratos_by_empresa(db: Session, empresa_id: int) -> list[models.Contra
         .order_by(models.Contrato.data_upload.desc())
         .all()
     )
+
+def get_contrato_by_id(db: Session, contrato_id: int) -> models.Contrato | None:
+    """
+    Busca um contrato específico pelo ID.
+
+    Args:
+        db (Session): A sessão do banco de dados.
+        contrato_id (int): O ID do contrato a ser buscado.
+
+    Returns:
+        models.Contrato | None: O objeto de contrato se encontrado, None caso contrário.
+    """
+    return (
+        db.query(models.Contrato)
+        .filter(models.Contrato.id == contrato_id)
+        .first()
+    )
