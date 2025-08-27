@@ -238,29 +238,9 @@ Este projeto está licenciado sob a Licença MIT - veja o arquivo [LICENSE](LICE
 
 ## 📞 Contato
 
-- **Email**: contato@mustafa.com
-- **GitHub**: [https://github.com/seu-usuario/mustafa-backend](https://github.com/seu-usuario/mustafa-backend)
-- **LinkedIn**: [Seu LinkedIn](https://linkedin.com/in/seu-perfil)
-
-## 🗺️ Roadmap
-
-### Versão 2.0 (Q2 2024)
-- [ ] Relatórios avançados em PDF
-- [ ] Integração com mais plataformas de mensagem
-- [ ] Dashboard de analytics em tempo real
-- [ ] API mobile para aplicativo nativo
-
-### Versão 2.1 (Q3 2024)
-- [ ] Sistema de notificações push
-- [ ] Integração com CRM externo
-- [ ] Backup automático na nuvem
-- [ ] Suporte multi-idiomas
-
-### Versão 3.0 (Q4 2024)
-- [ ] Machine Learning para predições
-- [ ] Interface de administração avançada
-- [ ] API GraphQL
-- [ ] Microserviços architecture
+- **Email**: comercial@ozentech.com
+- **GitHub**: [https://github.com/Ozen-Tech/mustafa-backend](https://github.com/Ozen-Tech/mustafa-backend)]
+- **LinkedIn**: [LinkedIn](https://www.linkedin.com/company/ozen-tech)
 
 ## ❓ FAQ
 
@@ -309,30 +289,4 @@ pytest backend/tests/
 npm test --prefix mustafa-frontend
 ```
 
-### Estrutura do Projeto
-
-```
-mustafa-backend/
-├── backend/                 # API FastAPI
-│   ├── app/
-│   │   ├── core/           # Configurações
-│   │   ├── crud/           # Operações de banco
-│   │   ├── db/             # Modelos e conexão
-│   │   ├── routers/        # Endpoints da API
-│   │   ├── schemas/        # Schemas Pydantic
-│   │   └── services/       # Lógica de negócio
-│   └── requirements.txt    # Dependências Python
-├── mustafa-frontend/       # Interface Next.js
-│   ├── src/
-│   │   ├── app/           # Páginas e layouts
-│   │   ├── components/    # Componentes React
-│   │   ├── contexts/      # Contextos React
-│   │   └── lib/          # Utilitários
-│   └── package.json      # Dependências Node.js
-├── docker-compose.yml    # Configuração Docker
-└── README.md            # Este arquivo
-```
-
----
-
-**Desenvolvido com ❤️ pela equipe Mustafá**
+**Desenvolvido com ❤️ pela equipe Ozentech**
